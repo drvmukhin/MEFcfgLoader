@@ -23,13 +23,15 @@ Const MAX_LEN = 		134
 Const nABC =			2
 Const PARENTS = 		"1"
 Const DEBUG_FILE = "debug-loader"
+Const HideTerminal = 7
+Const ShowTerminal = 1
 
 Dim D0 
 Dim nResult, nTail, nIndex, nCountWeek, nCountMonth
 Dim strLine
 Dim strFileSessionTmp 
 Dim strDirectoryWork, strCRT_InstallFolder, strDirectoryTmp, strCRTexe, SecureCRT, nWindowState
-Dim nDebug, nLine, nDebugCRT
+Dim nDebug, nLine, nDebugCRT, ShowLog
 Dim intX, intY
 Dim nSession, nSessionTmp, nInventory
 Dim vSession, vSessionTmp(20), vMsg(20)
@@ -132,6 +134,7 @@ Set objEnvar = WScript.CreateObject("WScript.Shell")
 Set objShell = WScript.CreateObject("WScript.Shell")
 nDebugCRT = 0
 nDebug = 1
+ShowLog = False
 CurrentDate = Date()
 CurrentTime = Time()
 D0 = DateSerial(2015,1,1)
@@ -268,6 +271,17 @@ Loop
 	End Select
 	On Error goto 0
 	'-----------------------------------------------------------------
+	'  DISPLAY LOG FILE
+	'-----------------------------------------------------------------
+	If ShowLog Then 
+		strLaunch = strDirectoryWork & "\bin\tail.exe -n 40 -f " & strDirectoryWork & "\Log\" & DEBUG_FILE & ".log"
+		If Not GetWinAppPID(strPID, strParrentID, DEBUG_FILE, "tail.exe", nInfo) Then 
+			objEnvar.run (strLaunch)
+		Else
+			Call FocusToParentWindow(strPID)
+		End If
+	End If	
+	'-----------------------------------------------------------------
 	'  CHOOSE A DEFAULT TEXT EDITOR
 	'-----------------------------------------------------------------
 	On Error Resume Next
@@ -402,9 +416,9 @@ Loop
 						If UBound(Split(vLines(nInd),",")) => 4 Then 
 						    Select Case Split(vLines(nInd),",")(4)
 							     Case "1"
-                                    nWindowState = 2
+                                    nWindowState = HideTerminal
 								 Case Else
-									nWindowState = 1
+									nWindowState = ShowTerminal
 							End Select
 						End If 
 			Case SECURECRT_R_SESSION
@@ -1293,7 +1307,7 @@ End Function
 '    MAIN DIALOG FORM 
 '------------------------------------------------
 Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef vFlavors, byRef vSettings, ByRef vNodes, byRef vTemplates, byref vXLSheetPrefix, nDebug)
-	Dim g_objIE, g_objShell, objMonitor
+	Dim g_objIE, g_objShell, objMonitor, objIE_XLS
 	Dim vFilterList, vPolicerList, vCIR, vCBS
 	Dim nInd, Arg4, CFG_Downloaded, YES_NO
 	Dim nRatioX, nRatioY, nFontSize_10, nFontSize_12, nButtonX, nButtonY, nA, nB
@@ -1310,9 +1324,11 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 	Const MAX_PARAM = 40
 	Const MAX_BW_PROFILES = 30
 	Const TCG_MONITOR = "TCG_monitor"
+	Const TCG_TEMPLATE = "Juniper_1G_ACX500_E-LINE_E-LAN_E-Tree_E-Access_TCG_v5.2.xlsx"
 	Dim objCell
 	Set g_objIE = Nothing
     Set g_objShell = Nothing
+	Set objIE_XLS = Nothing
 	Call TrDebug ("IE_PromptForInputPullDown: OPEN MAIN CONFIG LOADER FORM ", "", objDebug, MAX_LEN, 3, nDebug)				
 	'-----------------------------------------------------
 	'	FIND THE MAXIMUM NUMBER OF ALL TASKS
@@ -1482,11 +1498,19 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
 						"px; ' name='POPULATE_ORIG' AccessKey='P' onclick=document.all('ButtonHandler').value='POPULATE_ORIG';>TCG <u>E</u>xport Original</button>" & _
 					"</td>"&_
+				"</tr>" &_										
 				"<tr>" &_
-    				"<td style=""border-style: None; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & 3 * LoginTitleH & """ width=""" & Int(LoginTitleW/4) & """>" & _
+					"<td style=""border-style: none; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & Int(LoginTitleH/4) & """ width=""" & LoginTitleW & """>" & _
+    					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
+						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
+						"px; ' name='POPULATE_ONLINE' AccessKey='P' onclick=document.all('ButtonHandler').value='POPULATE_ONLINE';>TCG <u>O</u>N-Line</button>" & _
+					"</td>"&_
+				"</tr>" &_					
+				"<tr>" &_
+    				"<td style=""border-style: None; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & 2 * LoginTitleH & """ width=""" & Int(LoginTitleW/4) & """>" & _
 						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & 3 * LoginTitleH & "; font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' name='EPTY' onclick=document.all('ButtonHandler').value='EMPTY';></button>" & _	
+						nMenuButtonX & ";height:" & 2 * LoginTitleH & "; font-size: " & nFontSize_12 & ".0pt;" &_
+						"px; ' name='EMPTY' onclick=document.all('ButtonHandler').value='EMPTY';></button>" & _	
 					"</td>"&_
 				"</tr></tbody></table>" &_
 				"<input name='ButtonHandler' type='hidden' value='Nothing Clicked Yet'>"
@@ -2557,6 +2581,50 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 				Set g_objIE = Nothing
                 Set g_objShell = Nothing
                 exit function
+            Case "POPULATE_ONLINE"
+			    g_objIE.Document.All("ButtonHandler").Value = "None"
+				Call Set_IE_obj (obgIE_XLS)
+				obgIE_XLS.Visible = True		
+			'   obgIE_XLS.Offline = True
+				obgIE_XLS.navigate "http://click.email.microsoftonline.com/?qs=7e6775aed57f9f8bad04391384a0f826ac6949839da6f0c35ddda04ff9e3d2b34338840f5feb2295"
+				Do
+					WScript.Sleep 200
+				Loop While obgIE_XLS.Busy
+				obgIE_XLS.Document.body.Style.FontFamily = "Helvetica"
+				obgIE_XLS.Document.body.Style.FontSize = nFontSize_Def
+				obgIE_XLS.Document.body.scroll = "no"
+				obgIE_XLS.Document.body.Style.overflow = "hidden"
+				obgIE_XLS.Document.body.Style.border = "None "
+			'	obgIE_XLS.Document.body.Style.background = "transparent url('" & BgFigure & "')"
+				obgIE_XLS.Document.body.Style.color = HttpTextColor1
+'				obgIE_XLS.height = WindowH
+'				obgIE_XLS.width = WindowW  
+				obgIE_XLS.document.Title = "TCG_ACX500"
+'				obgIE_XLS.Top = (intY - obgIE_XLS.height)/2
+'				obgIE_XLS.Left = (intX - obgIE_XLS.width)/2
+
+'				IE_Full_AppName = obgIE_XLS.document.Title & " - " & IE_Window_Title	
+				
+'				obgIE_XLS.Document.Body.innerHTML = strLine
+'				obgIE_XLS.MenuBar = False
+'				obgIE_XLS.StatusBar = False
+'				obgIE_XLS.AddressBar = False
+'				obgIE_XLS.Toolbar = False
+                i = 0
+				Do 
+				   i = i + 1
+				   Call TrDebug ("IExplorer: " & obgIE_XLS.document.Title, "", objDebug, MAX_LEN, 1, 1)														
+				   if i > 20 or obgIE_XLS.document.Title = TCG_TEMPLATE Then Exit Do
+				   WScript.Sleep 5000
+				Loop 
+                set objWrkBk = obgIE_XLS.document
+				IE_String = obgIE_XLS.Document.Body.innerHTML
+				For i = 0 to 50
+				    Call TrDebug ("IExplorer: " & Left(IE_String,100), "", objDebug, MAX_LEN, 1, 1)
+					IE_String = Right(IE_String,Len(IE_String) - 100)
+				Next
+	
+	Call IE_Unhide(obgIE_XLS)			    
 			Case "POPULATE_ORIG"
 				vvMsg(0,0) = "WOULD YOU LIKE TO POPULATE :" 		: vvMsg(0,1) = "bold" 	: vvMsg(0,2) =  HttpTextColor1
 				vvMsg(1,0) = "ALL ORIGINAL CONFIGS" 			    : vvMsg(1,1) = "bold" 	: vvMsg(1,2) =  HttpTextColor1
@@ -3472,9 +3540,9 @@ Function IE_PromptForSettings(ByRef vIE_Scale, byRef vSettings, byRef vPlatforms
 										vSettings(10) = vSettings(10) & g_objIE.Document.All("Settings_Param_" & 10)(3).Value
 										If g_objIE.Document.All("Hide_CRT").Checked Then 
 										    vSettings(10) = vSettings(10) & ",1"
-											 nWindowState = 2
+											 nWindowState = HideTerminal
 										Else 
-										     nWindowState = 1
+										     nWindowState = ShowTerminal
 										End If
 									Case 11
 										vSettings(11) = vParamNames(11) & Space(30 - Len(vParamNames(11))) & "= "
@@ -4265,4 +4333,61 @@ Function IE_Unhide(byRef objIE)
    If Not objIE.Visible then 
         objIE.Visible = True
     End If 
+End Function
+'----------------------------------------------------------------
+'   Function GetWinAppPID(strPID) Returns focus to the parent Window/Form
+'----------------------------------------------------------------
+Function GetWinAppPID(ByRef strPID, ByRef strParentPID, strCommandLine, strAppName, nDebug)
+Dim objWMI, colItems
+Dim process
+Dim strUser, pUser, pDomain, wql
+	strUser = GetScreenUserSYS()
+	GetWinAppPID = False
+	Do 
+		On Error Resume Next
+		Set objWMI = GetObject("winmgmts:\\127.0.0.1\root\cimv2")
+		If Err.Number <> 0 Then 
+				Call TrDebug ("GetMyPID ERROR: CAN'T CONNECT TO WMI PROCESS OF THE SERVER","",objDebug, MAX_LEN, 1, nDebug)
+				On error Goto 0 
+				Exit Do
+		End If 
+		wql = "SELECT * FROM Win32_Process WHERE Name = '" & strAppName & "' OR Name = '" & strAppName & " *32'"
+		On Error Resume Next
+		Set colItems = objWMI.ExecQuery(wql)
+		If Err.Number <> 0 Then
+				Call TrDebug ("GetMyPID ERROR: CAN'T READ QUERY FROM WMI PROCESS OF THE SERVER","",objDebug, MAX_LEN, 1, nDebug)
+				On error Goto 0 
+				Set colItems = Nothing
+				Exit Do
+		End If 
+		On error Goto 0 
+		For Each process In colItems
+			process.GetOwner  pUser, pDomain 
+			Call TrDebug ("GetWinAppPID: Process Name (PID): " & process.Name & " (" & process.ProcessId & ")", "",objDebug, MAX_LEN, 1, nDebug)
+			Call TrDebug ("GetWinAppPID: Owner: " & process.CSName & "/" & pUser, "",objDebug, MAX_LEN, 1, nDebug) 
+			Call TrDebug ("GetWinAppPID: CMD: " & process.CommandLine, "",objDebug, MAX_LEN, 1, nDebug) 
+			Call TrDebug ("GetWinAppPID: ParentPID:" &  Process.ParentProcessId, "",objDebug, MAX_LEN, 1, nDebug) 			
+			Select Case Lcase(strCommandLine)
+			    Case "null", "none", ""
+					If pUser = strUser then 
+						strPID = process.ProcessId
+						strParentPID = Process.ParentProcessId
+						Call TrDebug ("GetWinAppPID: Process is already running. Desktop user owns the process: " & strPID , "",objDebug, MAX_LEN, 1, nDebug)
+						GetWinAppPID = True
+						Exit For
+					End If
+			    Case Else
+					If pUser = strUser and InStr(process.CommandLine,strCommandLine) then 
+						strPID = process.ProcessId
+						strParentPID = Process.ParentProcessId
+						Call TrDebug ("GetWinAppPID: Process is already running. Desktop user owns the process: " & strPID, "",objDebug, MAX_LEN, 1, nDebug)
+						GetWinAppPID = True
+						Exit For
+					End If
+			End Select
+		Next
+		Set colItems = Nothing
+		Exit Do
+	Loop
+	Set objWMI = Nothing
 End Function

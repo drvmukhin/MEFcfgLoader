@@ -1,0 +1,33 @@
+[Node-Left]
+UNI-A=ge-0/0/1
+UNI-B=ge-0/1/0
+NNI=ge-0/0/0
+
+[Node-Right]
+UNI-C = ge-0/1/2
+UNI-D = ge-0/1/1
+UNI-CC = ge-0/0/1
+UNI-DD = ge-0/1/0
+NNI = ge-0/0/0
+
+[Service]
+E-Line
+E-LAN
+E-Access
+E-Tree
+
+[E-Line]
+epl:1,2,3,4,5
+evpl:1,2,3,3-2,3-3,4,5,6,7,8
+
+[E-LAN]
+eplan:1,2,3,4,5,6,7,8,15
+evplan:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,25
+
+[E-Access]
+aepl:1
+aepl-dei:2
+aepl-pcp:2
+aevpl:1
+aevpl-dei:2
+aevpl-pcp:2
