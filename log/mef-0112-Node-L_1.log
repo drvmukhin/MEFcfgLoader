@@ -1,0 +1,713 @@
+﻿Last login: Thu Jan 12 18:10:00 2017 from 172.29.111.40
+--- JUNOS 16.2R1.6 built 2016-11-23 22:18:04 UTC
+
+iometrix@node-L> 
+
+iometrix@node-L> 
+
+iometrix@node-L> edit 
+Entering configuration mode
+Users currently editing the configuration:
+  root terminal u0 (pid 4007) on since 2017-01-11 21:58:44 PST, idle 06:34:06
+      [edit]
+
+[edit]
+iometrix@node-L# edit groups global 
+
+[edit groups global]
+iometrix@node-L# save grp-global-original.conf 
+Wrote 336 lines of configuration to 'grp-global-original.conf'
+
+[edit groups global]
+iometrix@node-L# exit 
+
+[edit]
+iometrix@node-L# exit 
+Exiting configuration mode
+
+iometrix@node-L> ftp 172.29.111.40 
+Connected to 172.29.111.40.
+220-FileZilla Server version 0.9.48 beta
+220-written by Tim Kosse (tim.kosse@filezilla-project.org)
+220 Please visit http://sourceforge.net/projects/filezilla/
+Name (172.29.111.40:iometrix): iometrix
+331 Password required for iometrix
+Password:
+230 Logged on
+Remote system type is UNIX.
+ftp> binary
+200 Type set to I
+ftp> get  ./group-global-acx-l.conf group-global-acx-l.conf
+local: group-global-acx-l.conf remote: ./group-global-acx-l.conf
+200 Port command successful
+150 Opening data channel for file download from server of "/group-global-acx-l.conf"
+100% |****************************************|   986       00:00 ETA
+226 Successfully transferred "/group-global-acx-l.conf"
+986 bytes received in 0.03 seconds (29.71 KB/s)
+ftp> get  ./group-member0-acx-l.conf group-member0-acx-l.conf
+local: group-member0-acx-l.conf remote: ./group-member0-acx-l.conf
+200 Port command successful
+150 Opening data channel for file download from server of "/group-member0-acx-l.conf"
+100% |****************************************|   185       00:00 ETA
+226 Successfully transferred "/group-member0-acx-l.conf"
+185 bytes received in 0.04 seconds (4.41 KB/s)
+ftp> get ./E-Line/epl-5-acx-l.conf epl-5-acx-l.conf
+local: epl-5-acx-l.conf remote: ./E-Line/epl-5-acx-l.conf
+200 Port command successful
+150 Opening data channel for file download from server of "/E-Line/epl-5-acx-l.conf"
+100% |****************************************| 17961       00:00 ETA
+226 Successfully transferred "/E-Line/epl-5-acx-l.conf"
+17961 bytes received in 0.10 seconds (174.63 KB/s)
+ftp> quit
+221 Goodbye
+
+iometrix@node-L> edit 
+Entering configuration mode
+Users currently editing the configuration:
+  root terminal u0 (pid 4007) on since 2017-01-11 21:58:44 PST, idle 06:34:08
+      [edit]
+
+[edit]
+iometrix@node-L# load update epl-5-acx-l.conf 
+load complete
+
+[edit]
+iometrix@node-L# show groups ?
+Possible completions:
+  <[Enter]>            Execute this command
+  <group_name>         Group name
+  access-intf          Group name
+  core-intf            Group name
+  global               Group name
+  member0              Group name
+  |                    Pipe through a command
+[edit]
+iometrix@node-L# show groups load replace
+                                  ^
+syntax error.
+iometrix@node-L# ...load replacegrp-global-original.conf          
+                         ^
+syntax error.
+
+[edit]
+Last login: Thu Jan 12 18:13:32 2017 from 172.29.111.40
+--- JUNOS 16.2R1.6 built 2016-11-23 22:18:04 UTC
+
+iometrix@node-L> 
+
+iometrix@node-L> 
+
+iometrix@node-L> edit 
+Entering configuration mode
+Users currently editing the configuration:
+  root terminal u0 (pid 4007) on since 2017-01-11 21:58:44 PST, idle 06:39:42
+      [edit]
+  iometrix terminal p0 (pid 5319) on since 2017-01-12 18:13:35 PST
+      [edit]
+
+[edit]
+iometrix@node-L# edit groups global 
+
+[edit groups global]
+iometrix@node-L# save grp-global-original.conf 
+Wrote 336 lines of configuration to 'grp-global-original.conf'
+
+[edit groups global]
+iometrix@node-L# exit 
+
+[edit]
+iometrix@node-L# exit 
+Exiting configuration mode
+
+iometrix@node-L> ftp 172.29.111.40 
+Connected to 172.29.111.40.
+220-FileZilla Server version 0.9.48 beta
+220-written by Tim Kosse (tim.kosse@filezilla-project.org)
+220 Please visit http://sourceforge.net/projects/filezilla/
+Name (172.29.111.40:iometrix): iometrix
+331 Password required for iometrix
+Password:
+230 Logged on
+Remote system type is UNIX.
+ftp> binary
+200 Type set to I
+ftp> get  ./group-global-acx-l.conf group-global-acx-l.conf
+local: group-global-acx-l.conf remote: ./group-global-acx-l.conf
+200 Port command successful
+150 Opening data channel for file download from server of "/group-global-acx-l.conf"
+100% |****************************************|   986       00:00 ETA
+226 Successfully transferred "/group-global-acx-l.conf"
+986 bytes received in 0.05 seconds (20.61 KB/s)
+ftp> get  ./group-member0-acx-l.conf group-member0-acx-l.conf
+local: group-member0-acx-l.conf remote: ./group-member0-acx-l.conf
+200 Port command successful
+150 Opening data channel for file download from server of "/group-member0-acx-l.conf"
+100% |****************************************|   185       00:00 ETA
+226 Successfully transferred "/group-member0-acx-l.conf"
+185 bytes received in 0.04 seconds (5.03 KB/s)
+ftp> get ./E-Line/epl-5-acx-l.conf epl-5-acx-l.conf
+local: epl-5-acx-l.conf remote: ./E-Line/epl-5-acx-l.conf
+200 Port command successful
+150 Opening data channel for file download from server of "/E-Line/epl-5-acx-l.conf"
+100% |****************************************| 17961       00:00 ETA
+226 Successfully transferred "/E-Line/epl-5-acx-l.conf"
+17961 bytes received in 0.09 seconds (189.78 KB/s)
+ftp> quit
+221 Goodbye
+
+iometrix@node-L> edit 
+Entering configuration mode
+Users currently editing the configuration:
+  root terminal u0 (pid 4007) on since 2017-01-11 21:58:44 PST, idle 06:39:44
+      [edit]
+  iometrix terminal p0 (pid 5319) on since 2017-01-12 18:13:35 PST
+      [edit]
+
+[edit]
+iometrix@node-L# load update epl-5-acx-l.conf 
+load complete
+
+[edit]
+iometrix@node-L# show groups ?
+Possible completions:
+  <[Enter]>            Execute this command
+  <group_name>         Group name
+  access-intf          Group name
+  core-intf            Group name
+  global               Group name
+  member0              Group name
+  |                    Pipe through a command
+[edit]
+iometrix@node-L# show groups load replace
+                                  ^
+syntax error.
+iometrix@node-L# ...load replacegrp-global-original.conf          
+                         ^
+syntax error.
+
+[edit]
+iometrix@node-L# rollback ?  
+Possible completions:
+  <[Enter]>            Execute this command
+  0                    2017-01-12 18:16:06 PST by iometrix via cli 
+  1                    2017-01-11 21:59:08 PST by root via cli 
+  2                    2017-01-11 20:49:03 PST by root via other 
+  3                    2017-01-11 20:26:55 PST by root via cli 
+  4                    2016-03-30 10:06:43 PDT by root via cli 
+  5                    2016-03-30 08:59:43 PDT by root via cli 
+  6                    2016-03-28 05:44:10 PDT by root via other 
+  |                    Pipe through a command
+[edit]
+iometrix@node-L# rollback              
+load complete
+
+[edit]
+iometrix@node-L# edit groups global 
+
+[edit groups global]
+iometrix@node-L# load merge relative group-global-acx-l.conf 
+load complete
+
+[edit groups global]
+iometrix@node-L# exit 
+
+[edit]
+iometrix@node-L# edit groups member0 
+
+[edit groups member0]
+iometrix@node-L# load update relative group-member0-acx-l.conf 
+load complete
+
+[edit groups member0]
+iometrix@node-L# exit 
+
+[edit]
+iometrix@node-L# set apply-groups global 
+
+[edit]
+iometrix@node-L# set apply-groups member0 
+
+[edit]
+iometrix@node-L# commit 
+commit complete
+
+[edit]
+Last login: Thu Jan 12 18:16:33 2017 from 172.29.111.40
+--- JUNOS 16.2R1.6 built 2016-11-23 22:18:04 UTC
+
+iometrix@node-L> 
+
+iometrix@node-L> 
+
+iometrix@node-L> edit 
+Entering configuration mode
+Users currently editing the configuration:
+  root terminal u0 (pid 4007) on since 2017-01-11 21:58:44 PST, idle 00:05:11
+      [edit]
+  iometrix terminal p0 (pid 5319) on since 2017-01-12 18:13:35 PST, idle 00:08:20
+      [edit]
+
+[edit]
+iometrix@node-L# edit groups global 
+
+[edit groups global]
+iometrix@node-L# save grp-global-original.conf 
+Wrote 336 lines of configuration to 'grp-global-original.conf'
+
+[edit groups global]
+iometrix@node-L# exit 
+
+[edit]
+iometrix@node-L# exit 
+Exiting configuration mode
+
+iometrix@node-L> ftp 172.29.111.40 
+Connected to 172.29.111.40.
+220-FileZilla Server version 0.9.48 beta
+220-written by Tim Kosse (tim.kosse@filezilla-project.org)
+220 Please visit http://sourceforge.net/projects/filezilla/
+Name (172.29.111.40:iometrix): iometrix
+331 Password required for iometrix
+Password:
+230 Logged on
+Remote system type is UNIX.
+ftp> binary
+200 Type set to I
+ftp> get  ./group-global-acx-l.conf group-global-acx-l.conf
+local: group-global-acx-l.conf remote: ./group-global-acx-l.conf
+200 Port command successful
+150 Opening data channel for file download from server of "/group-global-acx-l.conf"
+100% |*************************************************************************************|   986       00:00 ETA
+226 Successfully transferred "/group-global-acx-l.conf"
+986 bytes received in 0.04 seconds (23.01 KB/s)
+ftp> get  ./group-member0-acx-l.conf group-member0-acx-l.conf
+local: group-member0-acx-l.conf remote: ./group-member0-acx-l.conf
+200 Port command successful
+150 Opening data channel for file download from server of "/group-member0-acx-l.conf"
+100% |*************************************************************************************|   185       00:00 ETA
+226 Successfully transferred "/group-member0-acx-l.conf"
+185 bytes received in 0.03 seconds (5.61 KB/s)
+ftp> get ./E-Line/epl-5-acx-l.conf epl-5-acx-l.conf
+local: epl-5-acx-l.conf remote: ./E-Line/epl-5-acx-l.conf
+200 Port command successful
+150 Opening data channel for file download from server of "/E-Line/epl-5-acx-l.conf"
+100% |*************************************************************************************| 17961       00:00 ETA
+226 Successfully transferred "/E-Line/epl-5-acx-l.conf"
+17961 bytes received in 0.09 seconds (194.63 KB/s)
+ftp> quit
+221 Goodbye
+
+iometrix@node-L> edit 
+Entering configuration mode
+Users currently editing the configuration:
+  root terminal u0 (pid 4007) on since 2017-01-11 21:58:44 PST, idle 00:05:51
+      [edit]
+  iometrix terminal p0 (pid 5319) on since 2017-01-12 18:13:35 PST, idle 00:09:00
+      [edit]
+
+[edit]
+iometrix@node-L# load update epl-5-acx-l.conf 
+load complete
+
+[edit]
+iometrix@node-L# show groups ?
+Possible completions:
+  <[Enter]>            Execute this command
+  <group_name>         Group name
+  access-intf          Group name
+  core-intf            Group name
+  global               Group name
+  member0              Group name
+  |                    Pipe through a command
+[edit]
+iometrix@node-L# show groups load replace
+                                  ^
+syntax error.
+iometrix@node-L# show groups load replacegrp-global-original.conf
+                                  ^
+syntax error.
+
+[edit]
+Last login: Thu Jan 12 18:24:26 2017 from 172.29.111.40
+--- JUNOS 16.2R1.6 built 2016-11-23 22:18:04 UTC
+iometrix@node-L> 
+
+iometrix@node-L> 
+
+iometrix@node-L> edit 
+Entering configuration mode
+Users currently editing the configuration:
+  root terminal u0 (pid 4007) on since 2017-01-11 21:58:44 PST, idle 00:02:59
+      [edit]
+  iometrix terminal p0 (pid 5319) on since 2017-01-12 18:13:35 PST, idle 00:13:57
+      [edit]
+
+[edit]
+iometrix@node-L# show 
+## Last changed: 2017-01-12 18:26:34 PST
+version 16.2R1.6;
+groups {
+    global {
+        system {
+            domain-name englab.juniper.net;
+            domain-search [ englab.juniper.net epbg.juniper.net juniper.net jnpr.net spglab.juniper.net ];
+            time-zone America/Los_Angeles;
+            debugger-on-panic;
+            debugger-on-break;
+            dump-on-panic;
+            authentication-order [ password radius ];
+            root-authentication {
+                encrypted-password "$1$ZUlES4dp$OUwWo1g7cLoV/aMWpHUnC/"; ## SECRET-DATA
+            }
+            name-server {
+                192.168.5.68;
+                192.168.60.131;
+            }
+            radius-server {
+                192.168.69.162 secret "$9$5T6AB1hcyeCAu1IEleWLxds2oJU.fQ7-jk.53n"; ## SECRET-DATA
+                192.168.60.52 secret "$9$29gGiPfzFn9jiqf5Q/9p0BEylvWXbY41R7db2JZ"; ## SECRET-DATA
+                192.168.64.10 secret "$9$vsEM7Vg4ZGDHdVs4oJiHmfT39AuOIrKWQFESrvXx"; ## SECRET-DATA
+                192.168.60.55 secret "$9$mPF/u0IRhy6/A0O1SyKM87Vw24JH.fLxGjHmQz"; ## SECRET-DATA
+            }
+            login {
+                class wheel {
+                    permissions [ admin clear field floppy interface maintenance network reset routing shell snmp system trace view ];
+                }
+                class readonly {
+                    permissions [ interface network routing system trace view ];
+                }
+                user regress {
+                    uid 928;
+                    class superuser;
+                    shell csh;
+                    authentication {
+                        encrypted-password "$1$kPU..$w.4FGRAGanJ8U4Yq6sbj7."; ## SECRET-DATA
+                    }
+                }
+                user fregress {
+                    uid 929;
+                    class superuser;
+                    shell csh;
+                    authentication {
+                        encrypted-password "$1$ZUlES4dp$OUwWo1g7cLoV/aMWpHUnC/"; ## SECRET-DATA
+                    }
+                }
+                user remote {
+                    uid 9999;
+                    class superuser;
+                    shell csh;
+                }
+                user vmukhin {
+                    uid 929;
+                    class super-user;
+                    authentication {
+                        encrypted-password "$1$.neRl71A$i3Kvqps7lkXQsQO9uVhHa/"; ## SECRET-DATA
+                    }
+                }
+                user iometrix {
+                    uid 2000;
+                    class super-user;
+                    authentication {
+                        encrypted-password "$1$LYJOOY7z$2mZ4usEMzxFGzZL6nRAT7/"; ## SECRET-DATA
+                    }
+                }
+            }
+            services {
+                finger;
+                ftp;
+                rlogin;
+                rsh;
+                ssh;
+                telnet;
+                xnm-clear-text;
+                netconf {
+                    ssh;
+                }
+            }
+            syslog {
+                host log {
+                    kernel info;
+                    any notice;
+                    pfe info;
+                    interactive-commands any;
+                }
+                file messages {
+                    kernel info;
+                    any notice;
+                    authorization info;
+                    pfe info;
+                    archive world-readable;
+                }                       
+                file security {
+                    interactive-commands any;
+                    archive world-readable;
+                }
+            }
+            processes {
+                routing enable;
+                ntp enable;
+                management enable;
+                watchdog enable;
+                snmp enable;
+                inet-process enable;
+                mib-process enable;
+            }
+            ntp {
+                boot-server 172.17.28.5;
+                server 172.17.28.5;
+                server 172.21.200.60;
+            }
+        }
+        chassis {
+            dump-on-panic;
+        }
+        interfaces {
+            lo0 {
+                unit 0 {
+                    family inet {
+                        address 127.0.0.1/32;
+                    }
+                }
+            }
+        }
+        snmp {
+            location "Solution lab";
+            community public {
+                authorization read-only;
+            }
+            community private {
+                authorization read-write;
+            }
+        }
+        routing-options {
+            static {
+                route 172.16.0.0/12 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 192.168.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.9.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.4.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.10.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.13.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.84.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.92.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.5.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.6.128.0/17 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }                       
+                route 207.17.136.0/23 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.102.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.160.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.163.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.209.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.212.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.213.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.214.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.216.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.215.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.99.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.227.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.150.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.157.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.204.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.85.12.0/22 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.94.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.205.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.206.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;             
+                    no-readvertise;
+                }
+                route 10.207.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.155.0.0/16 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.82.0.0/15 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.157.32.0/19 {
+                    next-hop 10.157.32.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.155.64.0/19 {
+                    next-hop 10.155.95.254;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.218.13.0/24 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.218.14.0/24 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.218.16.0/20 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.92.248.0/23 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+                route 10.218.32.0/20 {
+                    next-hop 10.164.0.1;
+                    retain;
+                    no-readvertise;
+                }
+            }
+        }
+    }
+    member0 {
+        system {
+            host-name node-L;
+        }
+        interfaces {
+            fxp0 {
+                unit 0 {
+                    family inet {
+                        address 10.164.1.88/23;
+                    }
+                }
+            }
+        }
+    }
+}
+apply-groups [ global member0 ];
+system {
+    syslog {
+        user * {
+            any emergency;
+        }
+        file messages {
+            any error;
+            authorization info;
+        }
+        file interactive-commands {
+            interactive-commands any;
+        }
+    }
+}
+
+[edit]

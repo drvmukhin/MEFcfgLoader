@@ -66,20 +66,53 @@ Sub Main()
 '------------------------------------------------------------------
 '	CHECK NUMBER OF ARGUMENTS AND EXIT IF LESS THEN 3
 '------------------------------------------------------------------
-	If crt.Arguments.Count < 3 Then
+	Dim nL, nR, vFW_FLT_L, vFW_FLT_R, strIFD, strNewFilter, strCommand, bCommit, FoundOldFilter
+	Redim vFW_FLT_L(0)
+	Redim vFW_FLT_R(0)
+	nL = 0 : nR = 0
+	strFilter = ""
+	strFileSettings = ""
+	strDirectoryWork = ""
+	On Error Resume	Next
+	For i = 0 to crt.Arguments.Count
+		Select Case crt.Arguments(i)
+			Case "F"
+			    Select Case Split(crt.Arguments(i+1),":")(0)
+					Case "L"
+					   Redim Preserve vFW_FLT_L(nL + 1)
+					   vFW_FLT_L(nL) = crt.Arguments(i+1)					
+					   nL = nL + 1
+					Case "R"
+					   Redim Preserve vFW_FLT_R(nR + 1)
+					   vFW_FLT_R(nR) = crt.Arguments(i+1)				
+					   nR = nR + 1
+				End Select
+			Case "D"
+				strDirectoryWork = crt.Arguments(i+1)
+			Case "S"
+				strFileSettings = crt.Arguments(i+1)
+		End Select
+		If Err.Number > 0 Then 
 			MsgBox "ERROR: Wrong number of arguments" & chr(13) &_
-			"ARG1: Name of the fw filter to submit" & chr(13) &_
-			"ARG2: Full Path to settings.dat file" & chr(13) &_
-			"ARG3: Full Path for Loader Work Folder"
+			"ARG1: -F <Node name L|R>:<filter name>:<interface name>" & chr(13) &_
+			"ARG2: -D <Work Folder Full Path>" & chr(13) &_
+			"ARG3: -S <Full Path to settings.dat file>"
+			crt.quit
+			Exit Sub
+		End If			
+	Next
+	On Error Goto 0 
+	If strFileSettings = "" or strDirectoryWork = "" Then
+		MsgBox "ERROR: Wrong number of arguments" & chr(13) &_
+		"ARG1: -F <Node name L|R>:<filter name>:<interface name>" & chr(13) &_
+		"ARG2: -D <Work Folder Full Path>" & chr(13) &_
+		"ARG3: -S <Full Path to settings.dat file>"
 		crt.quit
 		Exit Sub
 	End If
-	strFilter = crt.Arguments(0)
-	strFileSettings = crt.Arguments(1)
-	strDirectoryWork = crt.Arguments(2)	
-'----------------------------------------------------------------
-'	Open log File
-'----------------------------------------------------------------
+	'----------------------------------------------------------------
+	'	Open log File
+	'----------------------------------------------------------------
 			n = 5
 			i = 0
 			nRetries = 5
@@ -191,6 +224,34 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 		MsgBox "MEF Parameters File: " & chr(13) & strFileParam  & " not found!"
 		Exit Sub
 	End If
+	Redim vNodes(2,5)
+	nCount = GetFileLineCountByGroup(strFileParam, vLines,"Node-Left","","",0)
+	For nInd = 0 to nCount - 1
+		Select Case Split(vLines(nInd),"=")(0)
+				Case UNI_A
+							vNodes(0,0) = Split(vLines(nInd),"=")(1)
+				Case UNI_B
+							vNodes(0,1) = Split(vLines(nInd),"=")(1)
+				Case NNI
+							vNodes(0,2) = Split(vLines(nInd),"=")(1)
+		End Select
+	next
+	nCount = GetFileLineCountByGroup(strFileParam, vLines,"Node-Right","","",0)
+	For nInd = 0 to nCount - 1
+		Select Case Split(vLines(nInd),"=")(0)
+				Case UNI_C
+							vNodes(1,0) = Split(vLines(nInd),"=")(1)
+				Case UNI_D
+							vNodes(1,1) = Split(vLines(nInd),"=")(1)
+				Case UNI_CC
+							vNodes(1,2) = Split(vLines(nInd),"=")(1)
+				Case UNI_DD
+							vNodes(1,3) = Split(vLines(nInd),"=")(1)
+				Case NNI
+							vNodes(1,4) = Split(vLines(nInd),"=")(1)
+		End Select
+	Next
+	
 '------------------------------------------------------------------
 '	INITIAL CONFIGURATION FILES
 '------------------------------------------------------------------
@@ -211,14 +272,13 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
     '  Start SSH session to Left Node
     '--------------------------------------------------------------------------------
 	On Error Resume Next
-	Err.Clear
-	Set objTab_L = crt.Session.ConnectInTab("/S " & strFolder & strSessionL)
-	If Err.Number <> 0 Then 
-		Call  TrDebug_No_Date ("ERROR:", Err.Number & " Srce: " & Err.Source & " Desc: " &  Err.Description , objDebug, MAX_LEN, 1, 1)
-		Exit Sub
-	End If
+		Err.Clear
+		Set objTab_L = crt.Session.ConnectInTab("/S " & strFolder & strSessionL)
+		If Err.Number <> 0 Then 
+			Call  TrDebug_No_Date ("ERROR:", Err.Number & " Srce: " & Err.Source & " Desc: " &  Err.Description , objDebug, MAX_LEN, 1, 1)
+			Exit Sub
+		End If
 	On Error Goto 0
-	Call TrDebug_No_Date ("APPLYING FILTER: " & strFilter , "", objDebug, MAX_LEN, 3, nInfo)	
 	objTab_L.Caption = strHostL
 	objTab_L.Screen.Synchronous = True
 	objTab_L.Screen.Send chr(13)
@@ -230,92 +290,101 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	End If
 	objTab_L.Screen.Send "edit" & chr(13)
 	objTab_L.Screen.WaitForString "@" & strHostL & "#"
-	objTab_L.Screen.Send "edit interfaces" & chr(13)
-	objTab_L.Screen.WaitForString "@" & strHostL & "#"
-	objTab_L.Screen.Send "show |no-more" & chr(13)
-	strLine = objTab_L.Screen.ReadString ("#")
-	i = 0
-	strOldFilter = ""
-	nResult = 0
-	Do While i < UBound(Split(strLine,chr(13)))
-		If InStr(Split(strLine,chr(13))(i),"f-tc-") Then 
-		  if InStr(Split(strLine,chr(13))(i),strFilter) Then nResult = 2 : Exit Do : End If
-		  strOldFilter = Split(strLine,chr(13))(i)
-		  j = 0
-		  Do While j < UBound(Split(strOldFilter," ")) + 1
-			If InStr(Split(strOldFilter," ")(j),"f-tc-") Then 
-				strOldFilter = Split(strOldFilter," ")(j)
-				If Right(strOldFilter,1) = ";" Then 
-					strOldFilter = Left(strOldFilter,Len(strOldFilter)-1)
-				End If
-				Call TrDebug_No_Date ("FOUND OLD FILTER: " & strOldFilter , "OK", objDebug, MAX_LEN, 1, nInfo)
-				nResult = 1
-				Exit Do
-			End If
-			j = j + 1
-		  Loop
-		  Exit Do
-		End If
-		i = i + 1
-	Loop
-	objTab_L.Screen.Send chr(13)
-	objTab_L.Screen.WaitForString "@" & strHostL & "#"
-	Select Case nResult 
-        Case 1
-		objTab_L.Screen.Send "replace pattern " & strOldFilter & " with " & strFilter & chr(13)
+	'
+	'   Start Applying filters to Node L
+	bCommit = False
+	Call TrDebug_No_Date ("APPLYING FILTERS TO L-NODE: ", "", objDebug, MAX_LEN, 3, nInfo)		
+	For Each strCommand in vFW_FLT_L
+		If strCommand = "" Then Exit For
+		strFilter = Split(strCommand,":")(1)
+	    strIFD = vNodes(0,Int(Split(strCommand,":")(2)))
+        '
+		'   Validate interface configuration 
+		objTab_L.Screen.Send "edit interfaces " & strIFD & chr(13)
 		objTab_L.Screen.WaitForString "@" & strHostL & "#"
-		Call TrDebug_No_Date ("REPLACING PATTERN: " & strOldFilter & " with " & strFilter, "OK", objDebug, MAX_LEN, 1, nInfo)
-		Call  TrDebug_No_Date ("COMMIT " & strHostL, "......IN PROGRESS", objDebug, MAX_LEN, 1, nInfo)   
+		objTab_L.Screen.Send "show |no-more" & chr(13)
+		strLine = objTab_L.Screen.ReadString ("#")
+		If InStr(strLine,strFilter) <> 0 Then 
+			Call TrDebug_No_Date ("FILTER " & strFilter & " IS ALREADY APPLIED", "OK", objDebug, MAX_LEN, 1, nInfo)
+		Else 
+			i = 0
+			strOldFilter = ""
+			FoundOldFilter = False
+			Do While i < UBound(Split(strLine,chr(13)))
+				If InStr(Split(strLine,chr(13))(i),"f-tc-") Then 
+				  strOldFilter = Split(strLine,chr(13))(i)
+				  j = 0
+				  Do While j < UBound(Split(strOldFilter," ")) + 1
+					If InStr(Split(strOldFilter," ")(j),"f-tc-") Then 
+						strOldFilter = Split(strOldFilter," ")(j)
+						If Right(strOldFilter,1) = ";" Then 
+							strOldFilter = Left(strOldFilter,Len(strOldFilter)-1)
+						End If
+						Call TrDebug_No_Date ("FOUND OLD FILTER: " & strOldFilter , "OK", objDebug, MAX_LEN, 1, nInfo)
+						FoundOldFilter = True 
+						Exit Do
+					End If
+					j = j + 1
+				  Loop
+				  Exit Do
+				End If
+				i = i + 1
+			Loop
+			objTab_L.Screen.Send chr(13)
+			objTab_L.Screen.WaitForString "@" & strHostL & "#"
+		End If 
+		If FoundOldFilter Then 
+			objTab_L.Screen.Send "replace pattern " & strOldFilter & " with " & strFilter & chr(13)
+			objTab_L.Screen.WaitForString "@" & strHostL & "#"
+			Call TrDebug_No_Date ("REPLACING PATTERN: " & strOldFilter & " with " & strFilter, "OK", objDebug, MAX_LEN, 1, nInfo)
+			bCommit = True
+		End If 
+        objTab_L.Screen.Send "exit" & chr(13)
+		objTab_L.Screen.WaitForString "@" & strHostL & "#"
+	Next
+	'
+	'  Commit configuration on Left Node
+	Call  TrDebug_No_Date ("COMMIT " & strHostL, "......IN PROGRESS", objDebug, MAX_LEN, 1, nInfo)   
+	If bCommit Then 
+		objTab_L.Screen.Send "commit" & chr(13)
 		'---------------------------------------------
 		'   COMMIT L
-		'---------------------------------------------	
-		objTab_L.Screen.Send "commit" & chr(13)
+		'---------------------------------------------			
 		nResult = objTab_L.Screen.WaitForStrings (vWaitForCommit, 60)
 		Select Case nResult
 			Case 0
-				Call  TrDebug_No_Date ("COMMIT " & strHostL, "TIME OUT", objDebug, MAX_LEN, 1, nInfo)   
+				Call  TrDebug_No_Date ("COMMIT " & strHostL, "TIME OUT", objDebug, MAX_LEN, 1, nInfo)
 				Exit Sub
 			Case 1 
 				Call  TrDebug_No_Date ("COMMIT " & strHostL, "ERROR 1", objDebug, MAX_LEN, 1, nInfo)   
+				objTab_L.Screen.Send "rollback" & chr(13)
+				objTab_L.Screen.WaitForString "@" & strHostL & "#"		
+			    Call TrDebug_No_Date ("ROLLBACK CONFIGURATION ON " & strHostL ,"OK", objDebug, MAX_LEN, 1, nInfo)				
 				Exit Sub
 			Case 2 
 				Call  TrDebug_No_Date ("COMMIT " & strHostL, "ERROR 2", objDebug, MAX_LEN, 1, nInfo)   
+				objTab_L.Screen.Send "rollback" & chr(13)
+				objTab_L.Screen.WaitForString "@" & strHostL & "#"		
+			    Call TrDebug_No_Date ("ROLLBACK CONFIGURATION ON " & strHostL ,"OK", objDebug, MAX_LEN, 1, nInfo)				
 				Exit Sub
 			Case Else
 				Call  TrDebug_No_Date ("COMMIT " & strHostL, "OK", objDebug, MAX_LEN, 1, nInfo)   
 		End Select	
 		objTab_L.Screen.Send chr(13)	
 		objTab_L.Screen.WaitForString "@" & strHostL & "#"
-		objTab_L.Screen.Send "exit" & chr(13)
-		objTab_L.Screen.WaitForString "@" & strHostL & "#"
-	    Case 0 
-			Call TrDebug_No_Date ("WARNING: L-NODE OLD FILTER WAS NOT FOUND ", "", objDebug, MAX_LEN, 1, nInfo)
-			Call TrDebug_No_Date ("WARNING: L-NODE NEW FILTER WAS NOT APPLIED ", "", objDebug, MAX_LEN, 1, nInfo)		
-			objTab_L.Screen.Send "exit" & chr(13)
-			objTab_L.Screen.WaitForString "@" & strHostL & "#"
-			objTab_L.Screen.Send "rollback" & chr(13)
-			objTab_L.Screen.WaitForString "@" & strHostL & "#"		
-        Case 2		
-  			Call TrDebug_No_Date ("FILTER HAS BEEN ALREDY APPLYED ON L-NODE ", "", objDebug, MAX_LEN, 1, nInfo)
-			Call TrDebug_No_Date ("NO CONFIGURATION CHANGE WAS DONE ON L-NODE ", "", objDebug, MAX_LEN, 1, nInfo)		
-			objTab_L.Screen.Send "exit" & chr(13)
-			objTab_L.Screen.WaitForString "@" & strHostL & "#"
-			objTab_L.Screen.Send "rollback" & chr(13)
-			objTab_L.Screen.WaitForString "@" & strHostL & "#"		
-	End Select
+    End If
 	objTab_L.Screen.Send "exit" & chr(13)	
 	objTab_L.Screen.WaitForString "@" & strHostL & ">"
-
 	'--------------------------------------------------------------------------------
-    '  Start SSH session to Right Node
+    '  START SSH SESSION TO RIGHT NODE
     '--------------------------------------------------------------------------------
 	On Error Resume Next
-	Err.Clear
-	Set objTab_R = crt.Session.ConnectInTab("/S " & strFolder & strSessionR)
-	If Err.Number <> 0 Then 
-		Call  TrDebug_No_Date ("ERROR:", Err.Number & " Srce: " & Err.Source & " Desc: " &  Err.Description , objDebug, MAX_LEN, 1, nInfo)
-		Exit Sub
-	End If
+		Err.Clear
+		Set objTab_R = crt.Session.ConnectInTab("/S " & strFolder & strSessionR)
+		If Err.Number <> 0 Then 
+			Call  TrDebug_No_Date ("ERROR:", Err.Number & " Srce: " & Err.Source & " Desc: " &  Err.Description , objDebug, MAX_LEN, 1, nInfo)
+			Exit Sub
+		End If
 	On Error Goto 0
 	objTab_R.Caption = strHostR
 	objTab_R.Screen.Synchronous = True
@@ -328,79 +397,91 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	End If
 	objTab_R.Screen.Send "edit" & chr(13)
 	objTab_R.Screen.WaitForString "@" & strHostR & "#"
-	objTab_R.Screen.Send "edit interfaces" & chr(13)
-	objTab_R.Screen.WaitForString "@" & strHostR & "#"
-	objTab_R.Screen.Send "show |no-more" & chr(13)
-	strLine = objTab_R.Screen.ReadString ("#")
-	i = 0
-	strOldFilter = ""
-	nResult = 0
-	Do While i < UBound(Split(strLine,chr(13)))
-		If InStr(Split(strLine,chr(13))(i),"f-tc-") Then
-		  if InStr(Split(strLine,chr(13))(i),strFilter) Then nResult = 2 : Exit Do : End If		
-		  strOldFilter = Split(strLine,chr(13))(i)
-		  j = 0
-		  Do While j < UBound(Split(strOldFilter," ")) + 1
-			If InStr(Split(strOldFilter," ")(j),"f-tc-") Then 
-				strOldFilter = Split(strOldFilter," ")(j)
-				If Right(strOldFilter,1) = ";" Then 
-					strOldFilter = Left(strOldFilter,Len(strOldFilter)-1)
+	'
+	'   Start Applying filters to Node L
+	bCommit = False
+	Call TrDebug_No_Date ("APPLYING FILTERS TO R-NODE: ", "", objDebug, MAX_LEN, 3, nInfo)		
+	For Each strCommand in vFW_FLT_R
+		If strCommand = "" Then Exit For
+		strFilter = Split(strCommand,":")(1)
+	    strIFD = vNodes(1,Int(Split(strCommand,":")(2)))
+        MsgBox strIFD
+        '
+		'   Validate interface configuration 			
+		objTab_R.Screen.Send "edit interfaces " & strIFD & chr(13)
+		objTab_R.Screen.WaitForString "@" & strHostR & "#"
+		objTab_R.Screen.Send "show |no-more" & chr(13)
+		strLine = objTab_R.Screen.ReadString ("#")
+		If InStr(strLine,strFilter) <> 0 Then 
+			Call TrDebug_No_Date ("FILTER " & strFilter & " IS ALREADY APPLIED", "OK", objDebug, MAX_LEN, 1, nInfo)
+		Else 			
+			i = 0
+			strOldFilter = ""
+			FoundOldFilter = False
+			Do While i < UBound(Split(strLine,chr(13)))
+				If InStr(Split(strLine,chr(13))(i),"f-tc-") Then
+				  strOldFilter = Split(strLine,chr(13))(i)
+				  j = 0
+				  Do While j < UBound(Split(strOldFilter," ")) + 1
+					If InStr(Split(strOldFilter," ")(j),"f-tc-") Then 
+						strOldFilter = Split(strOldFilter," ")(j)
+						If Right(strOldFilter,1) = ";" Then 
+							strOldFilter = Left(strOldFilter,Len(strOldFilter)-1)
+						End If
+						Call TrDebug_No_Date ("FOUND OLD FILTER: " & strOldFilter , "OK", objDebug, MAX_LEN, 1, nInfo)
+						FoundOldFilter = True 
+						Exit Do
+					End If
+					j = j + 1
+				  Loop
+				  Exit Do
 				End If
-				Call TrDebug_No_Date ("FOUND OLD FILTER: " & strOldFilter , "OK", objDebug, MAX_LEN, 1, nInfo)
-				nResult = 1
-				Exit Do
-			End If
-			j = j + 1
-		  Loop
-		  Exit Do
+				i = i + 1
+			Loop
+			objTab_R.Screen.Send chr(13)
+			objTab_R.Screen.WaitForString "@" & strHostR & "#"			
 		End If
-		i = i + 1
-	Loop
-	objTab_R.Screen.Send chr(13)
-	objTab_R.Screen.WaitForString "@" & strHostR & "#"
-	Select Case nResult
-	    Case 1
+		If FoundOldFilter Then 
 			objTab_R.Screen.Send "replace pattern " & strOldFilter & " with " & strFilter & chr(13)
 			objTab_R.Screen.WaitForString "@" & strHostR & "#"
 			Call TrDebug_No_Date ("REPLACING PATTERN: " & strOldFilter & " with " & strFilter, "OK", objDebug, MAX_LEN, 1, nInfo)
-			Call  TrDebug_No_Date ("COMMIT " & strHostR, "......IN PROGRESS", objDebug, MAX_LEN, 1, nInfo)   
-			'---------------------------------------------
-			'   COMMIT R
-			'---------------------------------------------	
-			objTab_R.Screen.Send "commit" & chr(13)
-			nResult = objTab_R.Screen.WaitForStrings (vWaitForCommit, 60)
-			Select Case nResult
-				Case 0
-					Call  TrDebug_No_Date ("COMMIT " & strHostR, "TIME OUT", objDebug, MAX_LEN, 1, nInfo)   
-					Exit Sub
-				Case 1 
-					Call  TrDebug_No_Date ("COMMIT " & strHostR, "ERROR 1", objDebug, MAX_LEN, 1, nInfo)   
-					Exit Sub
-				Case 2 
-					Call  TrDebug_No_Date ("COMMIT " & strHostR, "ERROR 2", objDebug, MAX_LEN, 1, nInfo)   
-					Exit Sub
-				Case Else
-					Call  TrDebug_No_Date ("COMMIT " & strHostR, "OK", objDebug, MAX_LEN, 1, nInfo)   
-			End Select	
-			objTab_R.Screen.Send chr(13)	
-			objTab_R.Screen.WaitForString "@" & strHostR & "#"
-			objTab_R.Screen.Send "exit" & chr(13)
-			objTab_R.Screen.WaitForString "@" & strHostR & "#"
-		Case 0 
-			Call TrDebug_No_Date ("WARNING: R-NODE OLD FILTER WAS NOT FOUND ", "", objDebug, MAX_LEN, 1, nInfo)
-			Call TrDebug_No_Date ("WARNING: R-NODE NEW FILTER WAS NOT APPLIED ", "", objDebug, MAX_LEN, 1, nInfo)		
-			objTab_R.Screen.Send "exit" & chr(13)
-			objTab_R.Screen.WaitForString "@" & strHostR & "#"
-			objTab_R.Screen.Send "rollback" & chr(13)
-			objTab_R.Screen.WaitForString "@" & strHostR & "#"
-		Case 2
-  			Call TrDebug_No_Date ("FILTER HAS BEEN ALREDY APPLYED ON R-NODE ", "", objDebug, MAX_LEN, 1, nInfo)
-			Call TrDebug_No_Date ("NO CONFIGURATION CHANGE WAS DONE ON R-NODE ", "", objDebug, MAX_LEN, 1, nInfo)		
-			objTab_R.Screen.Send "exit" & chr(13)
-			objTab_R.Screen.WaitForString "@" & strHostR & "#"
-			objTab_R.Screen.Send "rollback" & chr(13)
-			objTab_R.Screen.WaitForString "@" & strHostR & "#"
-	End Select
+			bCommit = True
+		End If 
+		objTab_R.Screen.Send "exit" & chr(13)
+		objTab_R.Screen.WaitForString "@" & strHostR & "#"		
+	Next
+	'
+	'  Commit configuration on Left Node
+	Call  TrDebug_No_Date ("COMMIT " & strHostR, "......IN PROGRESS", objDebug, MAX_LEN, 1, nInfo)   
+	If bCommit Then 
+		objTab_R.Screen.Send "commit" & chr(13)
+		'---------------------------------------------
+		'   COMMIT R
+		'---------------------------------------------	
+		objTab_R.Screen.Send "commit" & chr(13)
+		nResult = objTab_R.Screen.WaitForStrings (vWaitForCommit, 60)
+		Select Case nResult
+			Case 0
+				Call  TrDebug_No_Date ("COMMIT " & strHostR, "TIME OUT", objDebug, MAX_LEN, 1, nInfo)
+				Exit Sub
+			Case 1 
+				Call  TrDebug_No_Date ("COMMIT " & strHostR, "ERROR 1", objDebug, MAX_LEN, 1, nInfo)   
+				objTab_R.Screen.Send "rollback" & chr(13)
+				objTab_R.Screen.WaitForString "@" & strHostR & "#"		
+			    Call TrDebug_No_Date ("ROLLBACK CONFIGURATION ON " & strHostR ,"OK", objDebug, MAX_LEN, 1, nInfo)				
+				Exit Sub
+			Case 2 
+				Call  TrDebug_No_Date ("COMMIT " & strHostR, "ERROR 2", objDebug, MAX_LEN, 1, nInfo)   
+				objTab_R.Screen.Send "rollback" & chr(13)
+				objTab_R.Screen.WaitForString "@" & strHostR & "#"		
+			    Call TrDebug_No_Date ("ROLLBACK CONFIGURATION ON " & strHostR ,"OK", objDebug, MAX_LEN, 1, nInfo)				
+				Exit Sub
+			Case Else
+				Call  TrDebug_No_Date ("COMMIT " & strHostR, "OK", objDebug, MAX_LEN, 1, nInfo)   
+		End Select	
+		objTab_R.Screen.Send chr(13)	
+		objTab_R.Screen.WaitForString "@" & strHostR & "#"
+    End If
 	objTab_R.Screen.Send "exit" & chr(13)	
 	objTab_R.Screen.WaitForString "@" & strHostR & ">"
     objTab_R.Session.Disconnect	
@@ -408,7 +489,6 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	Call TrDebug_No_Date ("JOB DONE ", "", objDebug, MAX_LEN, 3, 1)	
 	If IsObject(objDebug) Then objDebug.close : End If
 '	objEnvar.Run "notepad.exe " & strDirectoryWork & "\Log\debug-terminal.log"	
-
 	Set objFSO = Nothing
 	Set objEnvar = Nothing
 	crt.quit		

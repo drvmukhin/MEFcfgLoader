@@ -15,7 +15,7 @@ WorkBookPrefix=AEPL,AEPL-DEI,AEPL-PCP,AEVPL,AEVPL-DEI,AEVPL-PCP,
 WorkBookPrefix=EP-TREE,EVP-TREE
 
 [Sessions]
-Left Node Session             = MEF_CFG_Loader, Node-L, node-l, iometrix,1
+Left Node Session             = MEF_CFG_Loader, Node-L, node-l, iometrix
 Right Node Session            = MEF_CFG_Loader, Node-R, node-r, iometrix
 
 
@@ -30,9 +30,9 @@ CONFIGS_RE0                   = group-member0
 # CONFIGS_RE1                 = 
 Platform Name                 = acx500
 Node Name Prefix              = acx
-Left Node IP                  = 10.164.1.88/24
-Right Node IP                 = 10.164.1.87/24
-FTP IP                        = 172.29.109.77
+Left Node IP                  = 10.164.1.88/23
+Right Node IP                 = 10.164.1.87/23
+FTP IP                        = 172.29.111.40
 FTP User                      = iometrix
 FTP Password                  = jnpr1234
 

@@ -1,0 +1,125 @@
+1/13/2017 7:27:37 PM: GetFileLineCountByGroup: -------------- GET FILE SIZE FIRST-----------
+1/13/2017 7:27:37 PM: GetFileLineCountByGroup: -------------- NOW READ TO ARRAY -----------
+1/13/2017 7:27:37 PM: GetFileLineCountByGroup: vFileLines(0): XLS TEMPLATE=NULL
+1/13/2017 7:27:37 PM: GetFileLineCountByGroup: vFileLines(1): XLS TEMPLATE=NULL
+1/13/2017 7:27:37 PM: GetFileLineCountByGroup: vFileLines(2): XLS TEMPLATE=NULL
+1/13/2017 7:27:37 PM: GetFileLineCountByGroup: vFileLines(3): XLS TEMPLATE=NULL
+1/13/2017 7:27:37 PM: GetFileLineCountByGroup: vFileLines(4): Original TCG Templates=C:\MEF\TCG\Original
+1/13/2017 7:27:37 PM: GetFileLineCountByGroup: vFileLines(5): Exported TCG Templates=C:\MEF\TCG\ACX500
+1/13/2017 7:27:37 PM: GetFileLineCountByGroup: vFileLines(6): WorkBookPrefix=EPL,EVPL,
+1/13/2017 7:27:37 PM: GetFileLineCountByGroup: vFileLines(7): WorkBookPrefix=EP-LAN,EVP-LAN,
+1/13/2017 7:27:37 PM: GetFileLineCountByGroup: vFileLines(8): WorkBookPrefix=AEPL,AEPL-DEI,AEPL-PCP,AEVPL,AEVPL-DEI,AEVPL-PCP,
+1/13/2017 7:27:37 PM: GetFileLineCountByGroup: vFileLines(9): WorkBookPrefix=EP-TREE,EVP-TREE
+1/13/2017 7:27:37 PM:  GetTemplates:                                                                                              NULL
+1/13/2017 7:27:37 PM:  GetTemplates:                                                                                              NULL
+1/13/2017 7:27:37 PM:  GetTemplates:                                                                                              NULL
+1/13/2017 7:27:37 PM:  GetTemplates:                                                                                              NULL
+1/13/2017 7:27:37 PM:  GetTemplates:                                                                               C:\MEF\TCG\Original
+1/13/2017 7:27:37 PM:  GetTemplates:                                                                                 C:\MEF\TCG\ACX500
+1/13/2017 7:27:37 PM:  GetTemplates:                                                                                         EPL,EVPL,
+1/13/2017 7:27:37 PM:  GetTemplates:                                                                                   EP-LAN,EVP-LAN,
+1/13/2017 7:27:37 PM:  GetTemplates:                                                 AEPL,AEPL-DEI,AEPL-PCP,AEVPL,AEVPL-DEI,AEVPL-PCP,
+1/13/2017 7:27:37 PM:  GetTemplates:                                                                                  EP-TREE,EVP-TREE
+1/13/2017 7:27:37 PM:  GetTestSeries: TOTAL TASKS IN CATEGORY: E-Line                                                                2
+1/13/2017 7:27:37 PM:  GetTestSeries: TOTAL TASKS IN CATEGORY: E-LAN                                                                 2
+1/13/2017 7:27:37 PM:  GetTestSeries: TOTAL TASKS IN CATEGORY: E-Access                                                              6
+1/13/2017 7:27:37 PM:  GetTestSeries: TOTAL TASKS IN CATEGORY: E-Tree                                                                2
+1/13/2017 7:27:37 PM:  GetTestSeries: nMaxFlavor = 6                                                                                  
+1/13/2017 7:27:37 PM:  ----------------------------------------------------------------------------------------------------------------
+1/13/2017 7:27:37 PM:                                   GetTestSeries: LOAD PROPERTIES FOR [E-Line] 
+1/13/2017 7:27:37 PM:  ----------------------------------------------------------------------------------------------------------------
+1/13/2017 7:27:37 PM:  GetTestSeries:epl:1,2,3,4,5                                                                                    
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(0,0,0) = epl                                                                            
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(0,0,1) = 1,2,3,4,5                                                                      
+1/13/2017 7:27:37 PM:  GetTestSeries:evpl:1,2,3-1,3-2,3-3,4,5,6,7                                                                     
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(0,1,0) = evpl                                                                           
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(0,1,1) = 1,2,3-1,3-2,3-3,4,5,6,7                                                        
+1/13/2017 7:27:37 PM:  ----------------------------------------------------------------------------------------------------------------
+1/13/2017 7:27:37 PM:                                    GetTestSeries: LOAD PROPERTIES FOR [E-LAN] 
+1/13/2017 7:27:37 PM:  ----------------------------------------------------------------------------------------------------------------
+1/13/2017 7:27:37 PM:  GetTestSeries:eplan:1,2,3,4,5                                                                                  
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(1,0,0) = eplan                                                                          
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(1,0,1) = 1,2,3,4,5                                                                      
+1/13/2017 7:27:37 PM:  GetTestSeries:evplan:1,2,3-1,3-2,3-2,4,5,6,7                                                                   
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(1,1,0) = evplan                                                                         
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(1,1,1) = 1,2,3-1,3-2,3-2,4,5,6,7                                                        
+1/13/2017 7:27:37 PM:  ----------------------------------------------------------------------------------------------------------------
+1/13/2017 7:27:37 PM:                                  GetTestSeries: LOAD PROPERTIES FOR [E-Access] 
+1/13/2017 7:27:37 PM:  ----------------------------------------------------------------------------------------------------------------
+1/13/2017 7:27:37 PM:  GetTestSeries:aepl:1                                                                                           
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(2,0,0) = aepl                                                                           
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(2,0,1) = 1                                                                              
+1/13/2017 7:27:37 PM:  GetTestSeries:aepl-dei:2                                                                                       
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(2,1,0) = aepl-dei                                                                       
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(2,1,1) = 2                                                                              
+1/13/2017 7:27:37 PM:  GetTestSeries:aepl-pcp:2                                                                                       
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(2,2,0) = aepl-pcp                                                                       
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(2,2,1) = 2                                                                              
+1/13/2017 7:27:37 PM:  GetTestSeries:aevpl:1                                                                                          
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(2,3,0) = aevpl                                                                          
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(2,3,1) = 1                                                                              
+1/13/2017 7:27:37 PM:  GetTestSeries:aevpl-dei:2                                                                                      
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(2,4,0) = aevpl-dei                                                                      
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(2,4,1) = 2                                                                              
+1/13/2017 7:27:37 PM:  GetTestSeries:aevpl-pcp:2                                                                                      
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(2,5,0) = aevpl-pcp                                                                      
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(2,5,1) = 2                                                                              
+1/13/2017 7:27:37 PM:  ----------------------------------------------------------------------------------------------------------------
+1/13/2017 7:27:37 PM:                                   GetTestSeries: LOAD PROPERTIES FOR [E-Tree] 
+1/13/2017 7:27:37 PM:  ----------------------------------------------------------------------------------------------------------------
+1/13/2017 7:27:37 PM:  GetTestSeries:eptree:1,2,3,4,5,7                                                                               
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(3,0,0) = eptree                                                                         
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(3,0,1) = 1,2,3,4,5,7                                                                    
+1/13/2017 7:27:37 PM:  GetTestSeries:evptree:1,2,3,4-1,4-2,4-3,5-1,5-2,5-3,6,7,8                                                      
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(3,1,0) = evptree                                                                        
+1/13/2017 7:27:37 PM:  GetTestSeries: Flavors(3,1,1) = 1,2,3,4-1,4-2,4-3,5-1,5-2,5-3,6,7,8                                            
+1/13/2017 7:27:37 PM:  ----------------------------------------------------------------------------------------------------------------
+1/13/2017 7:27:37 PM:                                    GetTestSeries: LAST LOADED SESSION: 0-0-4 
+1/13/2017 7:27:37 PM:  ----------------------------------------------------------------------------------------------------------------
+1/13/2017 7:27:37 PM:  ----------------------------------------------------------------------------------------------------------------
+1/13/2017 7:27:37 PM:                             IE_PromptForInputPullDown: OPEN MAIN CONFIG LOADER FORM  
+1/13/2017 7:27:37 PM:  ----------------------------------------------------------------------------------------------------------------
+1/13/2017 7:27:37 PM:  ----------------------------------------------------------------------------------------------------------------
+1/13/2017 7:27:37 PM:                                    IE_PromptForInputPullDown: nMaxFlavors = 6 
+1/13/2017 7:27:37 PM:  ----------------------------------------------------------------------------------------------------------------
+1/13/2017 7:27:38 PM:  MAIN FORM:                                                                                                  epl
+1/13/2017 7:27:38 PM:  MAIN FORM:                                                                                                 evpl
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND FILTER:                                                                     f-epl-option-1
+1/13/2017 7:27:38 PM:  GetFilterList: NO POLICER FOUND:                                                                            N/A
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND FILTER:                                                                        f-tc-14-1-1
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND POLICER (key "-rate"):                                                                p-3m
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND POLICER (key "-rate"):                                                                p-2m
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND FILTER:                                                                        f-tc-13-1-1
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND POLICER (key "-rate"):                                                               p-30m
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND POLICER (key "-rate"):                                                               p-15m
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND POLICER (key "-rate"):                                                                p-9m
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND SETTINGS FOR POLICER:                                                                 p-2m
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND SETTINGS FOR POLICER:                                                                 p-9m
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND FILTER:                                                                     f-epl-option-1
+1/13/2017 7:27:38 PM:  GetFilterList: NO POLICER FOUND:                                                                            N/A
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND FILTER:                                                                        f-tc-14-1-1
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND POLICER (key "-rate"):                                                                p-3m
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND POLICER (key "-rate"):                                                                p-2m
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND FILTER:                                                                        f-tc-13-1-1
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND POLICER (key "-rate"):                                                               p-30m
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND POLICER (key "-rate"):                                                               p-15m
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND POLICER (key "-rate"):                                                                p-9m
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND SETTINGS FOR POLICER:                                                                 p-2m
+1/13/2017 7:27:38 PM:  GetFilterList: FOUND SETTINGS FOR POLICER:                                                                 p-9m
+1/13/2017 7:27:38 PM:  COMMAND:  tasklist /fo csv /fi "Windowtitle eq Juniper Networks MEF Configuration Loader - Windows Internet Explorer provided by Juniper Networks" >C:\Users\vmukhin\svc-496945.dat
+1/13/2017 7:27:38 PM:  BATCH FILE EXECUTED:  C:\Users\vmukhin\run-496945.bat
+           GETTING SIZE OF THE FILE FIRST        
+GetFileLineCountSelect:    "Image Name","PID","Session Name","Session#","Mem Usage"
+GetFileLineCountSelect:    "iexplore.exe","12984","Console","1","53,832 K"
+File Size: 2 Array Size: 2
+           NOW TRYING TO RIGHT INTO AN ARRAY        
+GetFileLineCountSelect: vFileLines(0)="Image Name","PID","Session Name","Session#","Mem Usage"
+GetFileLineCountSelect: vFileLines(1)="iexplore.exe","12984","Console","1","53,832 K"
+1/13/2017 7:27:39 PM:  IE_PromptForInput: Looking for UNI in Left cfg: ge-0/0/1                                               OK (284)
+1/13/2017 7:27:39 PM:  IE_PromptForInput: Looking for UNI in Left cfg: ge-0/1/0                                               OK (301)
+1/13/2017 7:27:39 PM:  IE_PromptForInput: Looking for UNI in Left cfg: ge-0/0/0                                               OK (270)
+1/13/2017 7:27:39 PM:  IE_PromptForInput: Looking for UNI in Right cfg: ge-0/1/2                                              OK (301)
+1/13/2017 7:27:39 PM:  IE_PromptForInput: Looking for UNI in Right cfg: ge-0/1/1                                              OK (284)
+1/13/2017 7:27:39 PM:  IE_PromptForInput: Looking for UNI in Right cfg:ge-0/0/1                                               NONE (0)
+1/13/2017 7:27:39 PM:  IE_PromptForInput: Looking for UNI in Right cfg:ge-0/1/0                                               NONE (0)
+1/13/2017 7:27:39 PM:  IE_PromptForInput: Looking for UNI in Right cfg: ge-0/0/0                                              OK (270)

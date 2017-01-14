@@ -10,7 +10,7 @@ Const HttpTextColor2 = "#F0BC1F"
 Const HttpTextColor3 = "#EBEAF7"
 Const HttpTextColor4 = "#A4A4A4"
 Const HttpBgColor1 = "Grey"
-Const HttpBgColor2 = "#292626" 
+Const HttpBgColor2 = "#272727" 
 Const HttpBgColor3 = "#2C2A23" 
 Const HttpBgColor4 = "#504E4E"
 Const HttpBgColor5 = "#0D057F"
@@ -1417,7 +1417,8 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 	'	GET NUMBER OF TASKS LINES
 	'------------------------------------------	
 	nLine = 25
-	WindowH = IE_Menu_Bar + 4 * LoginTitleH + cellH * (nLine) + nButtonY + nBottom
+	FullTitleH = 4 * LoginTitleH + cellH * (nLine) + nButtonY + nBottom
+	WindowH = IE_Menu_Bar + FullTitleH
 	WindowW = IE_Border + FullTitleW
 	If WindowW < 300 then WindowW = 300 End If
 
@@ -1430,7 +1431,7 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 	g_objIE.Document.body.scroll = "no"
 	g_objIE.Document.body.Style.overflow = "hidden"
 	g_objIE.Document.body.Style.border = "None "
-'	g_objIE.Document.body.Style.background = "transparent url('" & BgFigure & "')"
+	g_objIE.Document.body.Style.backgroundcolor = "black"
 	g_objIE.Document.body.Style.color = HttpTextColor1
     g_objIE.height = WindowH
     g_objIE.width = WindowW  
@@ -1443,101 +1444,126 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
     '-----------------------------------------------------------------
 	' Create Background Table  		
 	'-----------------------------------------------------------------
-	htmlEmptyCell = _
-        	"<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(LoginTitleW/6) & """></td>"
-	nLine = nLine + 2
-   strLine = strLine &_	
-		"<table border=""1"" cellpadding=""1"" cellspacing=""1"" height=""" & 4 * LoginTitleH + cellH * (nLine) + nButtonY + nBottom &_
-		""" width=""" & FullTitleW & """ valign=""middle"" background=""" & bgFigure & """ background-repeat=""no-repeat""" &_ 
-		"style="" position: absolute; top: 0px; left:0px;" &_
-		"border-collapse: collapse; border-style: none ; background-color: " & HttpBgColor6 & "'; width: " & LoginTitleW & "px;"">" & _
-			"<tbody>" &_
-			    "<tr>"&_
-					htmlEmptyCell &_
-				"</tr>" &_
-				"</tbody>" &_
-		"</table>"
+'	htmlEmptyCell = _
+'       	"<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(LoginTitleW/6) & """></td>"
+'	nLine = nLine + 2
+'   strLine = strLine &_	
+'		"<table border=""1"" cellpadding=""1"" cellspacing=""1"" height=""" & 4 * LoginTitleH + cellH * (nLine) + nButtonY + nBottom &_
+'		""" width=""" & FullTitleW & """ valign=""middle"" background=""" & bgFigure & """ background-repeat=""no-repeat""" &_ 
+'		"style="" position: absolute; top: 0px; left:0px;" &_
+'		"border-collapse: collapse; border-style: none ; background-color: " & HttpBgColor6 & "'; width: " & LoginTitleW & "px;"">" & _
+'			"<tbody>" &_
+'			    "<tr>"&_
+'					htmlEmptyCell &_
+'				"</tr>" &_
+'				"</tbody>" &_
+'		"</table>"
 	'------------------------------------------------------
 	'   Configuration BUTTON 
 	'------------------------------------------------------
-    nMenuButtonX = Int(LoginTitleW/4)
+	nSpace = 15
+    nMenuButtonX = Int(LoginTitleW/4) - 2 * nSpace
 	nMenuButtonY = nButtonY
+	nTable1_W = Int(LoginTitleW/4) - nSpace
+	nTable1_H = FullTitleH - 2 * LoginTitleH - 2 * nSpace
+	ButtonAlign = "center"
+	CellPadding = 2
 	strLine = strLine &_
-		"<table border=""1"" cellpadding=""1"" cellspacing=""1"" style="" position: absolute; left: 0px; top: " &  LoginTitleH & "px;" &_
+		"<table border=""0"" cellpadding="""& CellPadding &""" cellspacing=""0"" style="" position: absolute; left: 0px; top: " &  LoginTitleH + nSpace & "px;" &_
 		" border-collapse: collapse; border-style: none; border width: 1px; border-color: " & HttpBgColor2 & "; background-color: Transparent" &_
-		"; height: " & LoginTitleH & "px; width: " & Int(LoginTitleW/4) & "px;"">" & _
+		"; height: " & nTable1_H & "px; width: " & nTable1_W & "px;"">" & _
 			"<tbody>" & _
-				"<tr>" &_
-    				"<td style=""border-style: None; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & 2 * LoginTitleH & """ width=""" & Int(LoginTitleW/4) & """>" & _
-						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & 2 * nMenuButtonY & "; font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' name='EPTY' onclick=document.all('ButtonHandler').value='EMPTY';></button>" & _	
-					"</td>"&_
-				"</tr>" &_
     			"<tr>" &_
-    				"<td style=""border-style: None; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & LoginTitleH & """ width=""" & Int(LoginTitleW/4) & """>" & _
+    				"<td colspan=""2"" style=""border-style: None; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
 						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
 						nMenuButtonX & ";height:" & nMenuButtonY & "; font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' name='LOAD' onclick=document.all('ButtonHandler').value='LOAD';><u>L</u>oad Config</button>" & _	
+						"px; '  id='Button2' name='LOAD' onclick=document.all('ButtonHandler').value='LOAD';><u>L</u>oad Config</button>" & _	
 					"</td>"&_
 				"</tr>" &_
 				"<tr>" &_
-					"<td style=""border-style: none; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & Int(LoginTitleH/4) & """ width=""" & LoginTitleW & """>" & _
+					"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
 						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
 						nMenuButtonX & ";height:" & nMenuButtonY & "; font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' name='DNLD' onclick=document.all('ButtonHandler').value='DOWNLOAD';><u>S</u>ave Tested Config</button>" & _	
+						"px; '  id='Button3' name='DNLD' onclick=document.all('ButtonHandler').value='DOWNLOAD';><u>S</u>ave Tested Config</button>" & _	
 					"</td>"&_
 				"</tr>" &_
 				"<tr>" &_
-					"<td style=""border-style: None; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & LoginTitleH & """ width=""" & Int(LoginTitleW/4) & """>" & _
+    				"<td  colspan=""2"" style=""border-style: None; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & 2 * LoginTitleH & """ width=""" & nTable1_W & """>" & _
+						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
+						nMenuButtonX & ";height:" &  2 * nMenuButtonY & "; font-size: " & nFontSize_12 & ".0pt;" &_
+						"px; ' id='Button1' name='EPTY' onclick=document.all('ButtonHandler').value='EMPTY';></button>" & _	
+					"</td>"&_
+				"</tr>" &_
+				"<tr>" &_
+					"<td  colspan=""2"" style=""border-style: None; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
     					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
 						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' name='Apply_FWF' AccessKey='E' onclick=document.all('ButtonHandler').value='APPLY_FWF';><u>A</u>pply Filter</button>" & _
+						"px; '  id='Button4' name='Apply_FWF' AccessKey='E' onclick=document.all('ButtonHandler').value='APPLY_FWF';><u>A</u>pply Filter</button>" & _
 					"</td>"&_
 				"</tr>" &_
 				"<tr>" &_
-    				"<td style=""border-style: none; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & LoginTitleH & """ width=""" & Int(LoginTitleW/4) & """>" & _
+    				"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
     					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor4 & "; width:" &_
 						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' name='Check_' AccessKey='E' onclick=document.all('ButtonHandler').value='CHECK';><u>C</u>heck Config</button>" & _
+						"px; ' id='Button5' name='Check_' AccessKey='E' onclick=document.all('ButtonHandler').value='CHECK';><u>C</u>heck Config</button>" & _
 					"</td>"&_
 				"</tr>" &_
 				"<tr>" &_
-    				"<td style=""border-style: none; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & LoginTitleH & """ width=""" & Int(LoginTitleW/4) & """>" & _
+    				"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
 						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor4 & "; width:" &_
 						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px;' name='EDIT' onclick=document.all('ButtonHandler').value='EDIT';><u>E</u>dit Config</button>" & _	
+						"px;' id='Button6' name='EDIT' onclick=document.all('ButtonHandler').value='EDIT';><u>E</u>dit Config</button>" & _	
 					"</td>"&_
 				"</tr>" &_
 				"<tr>" &_
-					"<td style=""border-style: none; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & Int(LoginTitleH/4) & """ width=""" & LoginTitleW & """>" & _
+    				"<td  colspan=""2"" style=""border-style: None; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & nTable1_H - 20 * LoginTitleH - 10 * CellPadding & """ >" & _
+						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
+						nMenuButtonX & ";height:" & nTable1_H - 12 * LoginTitleH - 24 * CellPadding & "; font-size: " & nFontSize_12 & ".0pt;" &_
+						"px; ' id='Button10' name='EMPTY' onclick=document.all('ButtonHandler').value='EMPTY';></button>" & _	
+					"</td>"&_
+				"</tr>" &_				
+				"<tr>" &_
+					"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
      					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
 						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' name='POPULATE_DNLD' onclick=document.all('ButtonHandler').value='POPULATE_DNLD';>TCG <u>E</u>xport Tested</button>" & _
+						"px; ' id='Button11' name='COPY_CLPBRD' onclick=document.all('ButtonHandler').value='Do Nothing';>Copy to ClipBoarad</button>" & _
 					"</td>"&_
 				"</tr>" &_
 				"<tr>" &_
-					"<td style=""border-style: none; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & Int(LoginTitleH/4) & """ width=""" & LoginTitleW & """>" & _
+					"<td style=""border-style: none; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & LoginTitleH & """ >" & _
     					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' name='POPULATE_ORIG' AccessKey='P' onclick=document.all('ButtonHandler').value='POPULATE_ORIG';>TCG <u>E</u>xport Original</button>" & _
+						nMenuButtonX/2 - 2 & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
+						"px; ' id='Button12' name='COPY_CLPBRD_L' AccessKey='P' onclick=document.all('ButtonHandler').value='COPY_CLPBRD_L';>LEFT</button>" & _
+					"</td>"&_
+					"<td style=""border-style: none; background-color: Transparent;""align=""left"" class=""oa1"" height=""" & LoginTitleH & """ >" & _
+    					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
+						nMenuButtonX/2 - 2 & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
+						"px; ' id='Button13' name='COPY_CLPBRD_R' AccessKey='P' onclick=document.all('ButtonHandler').value='COPY_CLPBRD_R';>RIGHT</button>" & _
 					"</td>"&_
 				"</tr>" &_										
 				"<tr>" &_
-					"<td style=""border-style: none; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & Int(LoginTitleH/4) & """ width=""" & LoginTitleW & """>" & _
+					"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
+     					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
+						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
+						"px; ' id='Button7' name='POPULATE_DNLD' onclick=document.all('ButtonHandler').value='POPULATE_DNLD';>TCG <u>E</u>xport Tested</button>" & _
+					"</td>"&_
+				"</tr>" &_
+				"<tr>" &_
+					"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
     					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
 						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' name='POPULATE_ONLINE' AccessKey='P' onclick=document.all('ButtonHandler').value='POPULATE_ONLINE';>TCG <u>O</u>N-Line</button>" & _
+						"px; ' id='Button8' name='POPULATE_ORIG' AccessKey='P' onclick=document.all('ButtonHandler').value='POPULATE_ORIG';>TCG <u>E</u>xport Original</button>" & _
+					"</td>"&_
+				"</tr>" &_										
+				"<tr>" &_
+					"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
+    					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
+						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
+						"px; ' id='Button9' name='POPULATE_ONLINE' AccessKey='P' onclick=document.all('ButtonHandler').value='POPULATE_ONLINE';>TCG <u>O</u>N-Line</button>" & _
 					"</td>"&_
 				"</tr>" &_					
-				"<tr>" &_
-    				"<td style=""border-style: None; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & 2 * LoginTitleH & """ width=""" & Int(LoginTitleW/4) & """>" & _
-						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & 2 * LoginTitleH & "; font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' name='EMPTY' onclick=document.all('ButtonHandler').value='EMPTY';></button>" & _	
-					"</td>"&_
-				"</tr></tbody></table>" &_
-				"<input name='ButtonHandler' type='hidden' value='Nothing Clicked Yet'>"
+			"</tbody></table>" &_
+			"<input name='ButtonHandler' type='hidden' value='Nothing Clicked Yet'>"
 		nButton = 7
     '-----------------------------------------------------------------
 	' SET THE TITLE OF THE  FORM   		
@@ -1562,149 +1588,137 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 				"40;height:40;" &_
 				"' name='SETTINGS' onclick=document.all('ButtonHandler').value='SETTINGS_';></button>" & _	
 			"</td>" &_			
-		"</tr></tbody></table>"
-	
-		'-----------------------------------------------------------------
-		' DRAW CONFIGURATION TABLE
-		'-----------------------------------------------------------------
+		"</tr></tbody></table>"	
 		'-----------------------------------------------------------------
 		' DRAW ROW WITH CONFIGURATION TITLE
 		'-----------------------------------------------------------------	
+		nTable2_W = FullTitleW - Int(LoginTitleW/4) - nSpace
+		nTable2_H = FullTitleH - 2 * LoginTitleH - 2 * nSpace	
 		cTitle = "Choose MEF CE2.0 Service Configuration"
+		strTitleCell = "<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(nTable2_W/4) & """>" & _
+						"<p style=""text-align: center; font-size: " & nFontSize_10 & ".0pt; font-family: 'Helvetica'; color: " & HttpTextColor2 &_
+						";font-weight: normal;font-style: normal;"">"
+
 	    strLine = strLine &_
-		"<table border=""1"" cellpadding=""1"" cellspacing=""1"" style="" position: absolute; left: " & Int(LoginTitleW/4) & "px; top: " & LoginTitleH & "px;" &_
-		" border-collapse: collapse; border-style: none; border width: 1px; border-color: " & HttpBgColor5 &_
-		"; background-color: Transparent; height: " & LoginTitleH & "px; width: " & LoginTitleW & "px;"">" & _
+		"<table border=""0"" cellpadding=""0"" cellspacing=""0""" &_
+		"style="" position: absolute; left: " & Int(LoginTitleW/4) & "px; top: " & LoginTitleH + nSpace & "px;" &_
+		" border-style: solid; border width: 1px; border-color: black;" &_
+		"background-color: " & HttpBgColor2 & "; height: " & LoginTitleH & "px; width: " & nTable2_W & "px;"">" & _
 		"<tbody>" & _
 		"<tr>" &_
-			"<td style=""border-style: none; background-color: None;""" &_
+			"<td colspan=""4"" style=""border-style: none; background-color: transparent;""" &_
 			"align=""center"" valign=""middle"" class=""oa1"" height=""" & LoginTitleH & """ width=""" & LoginTitleW & """>" & _
 				"<p><span style="" font-size: " & nFontSize_12 & ".0pt; font-family: 'Helvetica'; color: " & HttpTextColor3 &_				
 				";font-weight: normal;font-style: italic;"">" & cTitle & "</span></p>"&_
 			"</td>" &_
-		"</tr></tbody></table>"
-		'-----------------------------------------------------------------
-		' DRAW ROW WITH CONFIGURATIONS TO BE LOADED
-		'-----------------------------------------------------------------
-		strTitleCell = "<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(LoginTitleW/4) & """>" & _
-						"<p style=""text-align: center; font-size: " & nFontSize_10 & ".0pt; font-family: 'Helvetica'; color: " & HttpTextColor2 &_
-						";font-weight: normal;font-style: normal;"">"
-
+		"</tr>" &_
+		"<tr>" &_
+			strTitleCell & "</p></td>"&_
+			strTitleCell & "</p></td>"&_
+			strTitleCell & "</p></td>"&_
+			strTitleCell & "</p></td>"&_					 
+		"</tr>"	&_		
+		"<tr>" &_
+			strTitleCell & "SERVICE</p></td>"&_
+			strTitleCell & "TYPE</p></td>"&_
+			strTitleCell & "TEST CASE#</p></td>"&_
+			strTitleCell & "Use Saved CFG</p></td>"&_					 
+		"</tr>"
+		'-----------------------------------------------------
+		'  SELECT SERVICE NAME
+		'-----------------------------------------------------
 		strLine = strLine &_
-			"<table border=""1"" cellpadding=""1"" cellspacing=""1"" style="" position: absolute; left: " & Int(LoginTitleW/4) & "px; top: " & 2 * LoginTitleH + nLine * cellH & "px;" &_
-			" border-collapse: collapse; border-style: none; border width: 1px; border-color: " & HttpBgColor2 & "; background-color: Transparent"  &_
-			"; height: " & LoginTitleH & "px; width: " & LoginTitleW & "px;"">" & _
-			"<tbody>" & _
-				"<tr>" &_
-					strTitleCell & "</p></td>"&_
-					strTitleCell & "</p></td>"&_
-					strTitleCell & "</p></td>"&_
-					strTitleCell & "</p></td>"&_					 
-				"</tr>"	&_		
-				"<tr>" &_
-					strTitleCell & "SERVICE</p></td>"&_
-					strTitleCell & "TYPE</p></td>"&_
-					strTitleCell & "TEST CASE#</p></td>"&_
-					strTitleCell & "Use Saved CFG</p></td>"&_					 
-				"</tr>"
-				'-----------------------------------------------------
-				'  SELECT SERVICE NAME
-				'-----------------------------------------------------
+		"<tr>"
+			strLine = strLine &_
+			"<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(LoginTitleW/4) & """>" & _
+				"<select name='Input_Param_0' id='Input_Param_0'" &_
+								"style=""border: none ; outline: none; text-align: right; font-size: " & nFontSize_10 & ".0pt;" &_ 
+								";position: relative; left:" & nTab & "px; " &_
+								"font-family: 'Helvetica'; color: " & HttpTextColor2 &_
+								"; background-color:" & HttpBgColor4 & "; font-weight: Normal;"" size='1'" & _
+								" onchange=document.all('ButtonHandler').value='Select_0';" &_
+								"type=text > "
+		For nService = 0 to Ubound(vSvc) - 1
+			strLine = strLine &_
+								"<option value=" & nService & """>" & vSvc(nService,1) & "</option>" 
+		Next
+		strLine = strLine &_
+					"<option value=" & Ubound(vSvc) & """>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>" &_
+				"</select>" &_
+			"</td>"
+		'-----------------------------------------------------
+		'  SELECT SERVISE FLAVOR
+		'-----------------------------------------------------
+		strLine = strLine &_
+			"<td style="" border-style: None;"" align=""left"" class=""oa2"" height=""" & cellH & """ width=""" & nNameW & """>" &_
+				"<select name='Input_Param_1' id='Input_Param_1'" &_
+								"style=""border: none ; outline: none; text-align: right; font-size: " & nFontSize_10 & ".0pt;" &_ 
+								";position: relative; left:" & nTab & "px; " &_
+								"font-family: 'Helvetica'; color: " & HttpTextColor2 &_
+								"; background-color: " & HttpBgColor4 & "; font-weight: Normal;"" size='1'" & _
+								" onchange=document.all('ButtonHandler').value='Select_1';" &_
+								"type=text > "
+		For nFlavor = 0 to nMaxFlavors
+			strLine = strLine &_
+								"<option value=" & nFlavor & """>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>" 
+		Next
+		strLine = strLine &_
+				"</select>" &_
+			"</td>"
+			'-----------------------------------------------------
+			'  SELECT TEST NUMBER
+			'-----------------------------------------------------
+			strLine = strLine &_
+				"<td style="" border-style: None;"" align=""left"" class=""oa2"" height=""" & cellH & """ width=""" & nNameW & """>" &_
+					"<select name='Input_Param_2' id='Input_Param_2'" &_
+									"style=""border: none ; outline: none; text-align: right; font-size: " & nFontSize_10 & ".0pt;" &_ 
+									";position: relative; left:" & nTab & "px; " &_
+									"font-family: 'Helvetica'; color: " & HttpTextColor2 &_
+									"; background-color: " & HttpBgColor4 & "; font-weight: Normal;"" size='1'" & _
+									" onchange=document.all('ButtonHandler').value='Select_2';" &_
+									"type=text > "
+			For nTask = 0 to MAX_PARAM
 				strLine = strLine &_
-				"<tr>"
-					strLine = strLine &_
-					"<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(LoginTitleW/4) & """>" & _
-						"<select name='Input_Param_0' id='Input_Param_0'" &_
-										"style=""border: none ; outline: none; text-align: right; font-size: " & nFontSize_10 & ".0pt;" &_ 
-										";position: relative; left:" & nTab & "px; " &_
-										"font-family: 'Helvetica'; color: " & HttpTextColor2 &_
-										"; background-color:" & HttpBgColor4 & "; font-weight: Normal;"" size='1'" & _
-										" onchange=document.all('ButtonHandler').value='Select_0';" &_
-										"type=text > "
-				For nService = 0 to Ubound(vSvc) - 1
-					strLine = strLine &_
-										"<option value=" & nService & """>" & vSvc(nService,1) & "</option>" 
-				Next
-				strLine = strLine &_
-							"<option value=" & Ubound(vSvc) & """>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>" &_
-						"</select>" &_
-					"</td>"
-				'-----------------------------------------------------
-				'  SELECT SERVISE FLAVOR
-				'-----------------------------------------------------
-				strLine = strLine &_
-					"<td style="" border-style: None;"" align=""left"" class=""oa2"" height=""" & cellH & """ width=""" & nNameW & """>" &_
-						"<select name='Input_Param_1' id='Input_Param_1'" &_
-										"style=""border: none ; outline: none; text-align: right; font-size: " & nFontSize_10 & ".0pt;" &_ 
-										";position: relative; left:" & nTab & "px; " &_
-										"font-family: 'Helvetica'; color: " & HttpTextColor2 &_
-										"; background-color: " & HttpBgColor4 & "; font-weight: Normal;"" size='1'" & _
-										" onchange=document.all('ButtonHandler').value='Select_1';" &_
-										"type=text > "
-				For nFlavor = 0 to nMaxFlavors
-					strLine = strLine &_
-										"<option value=" & nFlavor & """>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>" 
-				Next
-				strLine = strLine &_
-						"</select>" &_
-					"</td>"
-				'-----------------------------------------------------
-				'  SELECT TEST NUMBER
-				'-----------------------------------------------------
-				strLine = strLine &_
-					"<td style="" border-style: None;"" align=""left"" class=""oa2"" height=""" & cellH & """ width=""" & nNameW & """>" &_
-						"<select name='Input_Param_2' id='Input_Param_2'" &_
-										"style=""border: none ; outline: none; text-align: right; font-size: " & nFontSize_10 & ".0pt;" &_ 
-										";position: relative; left:" & nTab & "px; " &_
-										"font-family: 'Helvetica'; color: " & HttpTextColor2 &_
-										"; background-color: " & HttpBgColor4 & "; font-weight: Normal;"" size='1'" & _
-										" onchange=document.all('ButtonHandler').value='Select_2';" &_
-										"type=text > "
-				For nTask = 0 to MAX_PARAM
-					strLine = strLine &_
-										"<option value=" & nTask & """>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>" 
-				Next
-				strLine = strLine &_
-						"</select>" &_
-					"</td>"
-				strLine = strLine &_
-					"<td style="" border-style: None; background-color: Transparent;"" class=""oa2"" height=""" & LoginTitleH & """ width=""" & nTab & """ align=""middle"">" & _
-						"<input type=checkbox name='ConfigLocation' style=""color: " & HttpTextColor2 & ";""" & _
-						" onclick=document.all('ButtonHandler').value='CONFIG_SOURCE';" &_
-						"value='Original'>" &_
-					"</td>"&_
-			"</tr>" &_
-			"<tr>" &_
-				strTitleCell & "</p></td>" & strTitleCell & "</p></td>" & strTitleCell & "</p></td>" & strTitleCell & "</p></td>"&_					 
-			"</tr>"								
-	nLine = nLine + 4
-	'-----------------------------------------------------
-	'  END OF TABLE
-	'-----------------------------------------------------
-				strLine = strLine &_
-						"</tbody></table>"
+									"<option value=" & nTask & """>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>" 
+			Next
+			strLine = strLine &_
+					"</select>" &_
+				"</td>"
+			strLine = strLine &_
+				"<td style="" border-style: None; background-color: Transparent;"" class=""oa2"" height=""" & LoginTitleH & """ width=""" & nTab & """ align=""middle"">" & _
+					"<input type=checkbox name='ConfigLocation' style=""color: " & HttpTextColor2 & ";""" & _
+					" onclick=document.all('ButtonHandler').value='CONFIG_SOURCE';" &_
+					"value='Original'>" &_
+				"</td>"&_
+		"</tr>" &_
+		"<tr>" &_
+			strTitleCell & "</p></td>" & strTitleCell & "</p></td>" & strTitleCell & "</p></td>" & strTitleCell & "</p></td>"&_					 
+		"</tr>" &_
+	"</tbody></table>"
+    nLine = nLine + 4					
 	'-----------------------------------------------------
 	'  SELECT BW PROFILE FILTER
 	'-----------------------------------------------------
 
-		strTitleCell = "<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(LoginTitleW/4) & """>" & _
+		strTitleCell = "<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(nTable2_W/5) & """>" & _
 						"<p style=""text-align: center; font-size: " & nFontSize_10 & ".0pt; font-family: 'Helvetica'; color: " & HttpTextColor2 &_
 						";font-weight: normal;font-style: normal;"">"
-		strInputCell_1 = "<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(LoginTitleW/4) & """ align=""center"">" &_									
+		strInputCell_1 = "<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(nTable2_W/5) & """ align=""center"">" &_									
 						"<input name=BW_Param_1 value='' style=""text-align: center; font-size: " & nFontSize_10 & ".0pt;" &_ 
 						" border-style: none; font-family: 'Helvetica'; color: " & HttpTextColor2 &_
-					    "; background-color: Transparent; font-weight: Normal;"" AccessKey=i size=12 maxlength=15 " &_
+					    "; background-color: transparent; font-weight: Normal;"" AccessKey=i size=12 maxlength=15 " &_
 						"type=text > "
-		strInputCell_2 = "<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(LoginTitleW/4) & """ align=""center"">" &_									
+		strInputCell_2 = "<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(nTable2_W/5) & """ align=""center"">" &_									
 						"<input name=BW_Param_2 value='' style=""text-align: center; font-size: " & nFontSize_10 & ".0pt;" &_ 
 						" border-style: none; font-family: 'Helvetica'; color: " & HttpTextColor2 &_
-					    "; background-color: Transparent; font-weight: Normal;"" AccessKey=i size=12 maxlength=15 " &_
+					    "; background-color: transparent; font-weight: Normal;"" AccessKey=i size=12 maxlength=15 " &_
 						"type=text > "
 
 		strLine = strLine &_
-			"<table border=""0"" cellpadding=""1"" cellspacing=""1"" style="" position: absolute; left: " & Int(LoginTitleW/4) & "px; top: " & 2 * LoginTitleH + nLine * cellH & "px;" &_
-			" border-collapse: collapse; border-style: none; border width: 1px; border-color: " & HttpBgColor2 & "; background-color: Transparent"  &_
-			"; height: " & LoginTitleH & "px; width: " & LoginTitleW & "px;"">" & _
+			"<table border=""0"" cellpadding=""0"" cellspacing=""0""" &_ 
+			"style="" position: absolute; left: " & Int(LoginTitleW/4) & "px; top: " & 2 * LoginTitleH + nLine * cellH + 3 * nSpace & "px;" &_
+			"border-collapse: collapse; border-style: solid; border width: 1px; border-color: black; background-color: " & HttpBgColor2 & ";"  &_
+			"height: " & LoginTitleH & "px; width: " & nTable2_W & "px;"">" & _
 			"<tbody>" & _
 				"<tr>" &_
 					 strTitleCell & "</p></td>"&_
@@ -1728,9 +1742,9 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 					 strTitleCell & "A1 A2 B1 C1 B2 C2</p></td>"&_					 
 				"</tr>" &_
 				"<tr>" &_
-					"<td style="" border-style: None;"" align=""left"" class=""oa2"" height=""" & cellH & """ width=""" & Int(LoginTitleW/5) & """>" &_
+					"<td style="" border-style: None;"" align=""left"" class=""oa2"" height=""" & cellH & """ width=""" & Int(nTable2_W/5) & """>" &_
 						"<select name='bw_profile_1' id='bw_profile_1'" &_
-						"style=""width: " & Int(LoginTitleW/7) & "; border: none ; outline: none; text-align: right; font-size: " & nFontSize_10 & ".0pt;" &_ 
+						"style=""border: none ; outline: none; text-align: right; font-size: " & nFontSize_10 & ".0pt;" &_ 
 						";position: relative; left:" & nTab & "px; " &_
 						"font-family: 'Helvetica'; color: " & HttpTextColor2 &_
 						"; background-color: " & HttpBgColor4 & "; font-weight: Normal;"" size='1'" & _
@@ -1743,12 +1757,12 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 					"<td align=""middle"">" & Flt_Radio(0,0) & Flt_Radio(0,1) & Flt_Radio(1,0) & Flt_Radio(1,1) & Flt_Radio(1,2) & Flt_Radio(1,3) & "</td>" &_
 				"</tr>" &_
 				"<tr>" &_
-					strTitleCell & "</p></td>" & strTitleCell & "</p></td>" & strTitleCell & "</p></td>" & strTitleCell & "</p></td>"&_					 
+					strTitleCell & "</p></td>" & strTitleCell & "</p></td>" & strTitleCell & "</p></td>" & strTitleCell & "</p></td>" & strTitleCell & "</p></td>" &_					 
 				"</tr>"	&_	
 				"<tr>" &_
-					"<td style="" border-style: None;"" align=""left"" class=""oa2"" height=""" & cellH & """ width=""" & Int(LoginTitleW/5) & """>" &_
+					"<td style="" border-style: None;"" align=""left"" class=""oa2"" height=""" & cellH & """ width=""" & Int(nTable2_W/5) & """>" &_
 						"<select name='bw_profile_2' id='bw_profile_2'" &_
-						"style=""width: " & Int(LoginTitleW/7) & "; border: none; outline: none; text-align: right; font-size: " & nFontSize_10 & ".0pt;" &_ 
+						"style=""border: none; outline: none; text-align: right; font-size: " & nFontSize_10 & ".0pt;" &_ 
 						";position: relative; left:" & nTab & "px; " &_
 						"font-family: 'Helvetica'; color: " & HttpTextColor2 &_
 						"; background-color: " & HttpBgColor4 & "; font-weight: Normal;"" size='1'" & _
@@ -1759,29 +1773,78 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 					strInputCell_2 & "</td>" &_
 					strInputCell_2 & "</td>" &_				
 					"<td align=""middle"">" & Flt_Radio(0,0) & Flt_Radio(0,1) & Flt_Radio(1,0) & Flt_Radio(1,1) & Flt_Radio(1,2) & Flt_Radio(1,3) & "</td>" &_
+				"</tr>" &_	
+				"<tr>" &_
+					 strTitleCell & "</p></td>"&_
+					 strTitleCell & "</p></td>"&_
+					 strTitleCell & "</p></td>"&_
+					 strTitleCell & "</p></td>"&_
+					 strTitleCell & "</p></td>"&_					 
 				"</tr>" &_				
 			"</tbody></table>"
 
-			nLine = nLine + 2   						
+	nLine = nLine + 7
+	'-----------------------------------------------------------------
+	' NETWORK DIAGRAM
+	'-----------------------------------------------------------------
+	Dim DiagramW, DiagramH, ImageW, ImageH, BackgroundDivH
+	DiagramW = 700 : DiagramH = 250
+	ImageW = DiagramW  : ImageH = DiagramH 
+    BackgroundDivH = FullTitleH - 3 * LoginTitleH - 5 * nSpace	- nLine * cellH
+    htmlEmptyCell = _
+        	"<td style="" border-color: transparent; border-style: none;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(DiagramW/6) & """></td>"
 
-	'------------------------------------------------------
-	'   EXIT BUTTON
-	'------------------------------------------------------
-	strLine = strLine &_
-		"<table border=""1"" cellpadding=""1"" cellspacing=""1"" style="" position: absolute; left: " & Int(LoginTitleW/4) & "px; bottom: " & LoginTitleH & "px;" &_
-		" border-collapse: collapse; border-style: none; border width: 1px; border-color: Transparent; background-color: Transparent " &_
-		"; height: " & LoginTitleH & "px; width: " & LoginTitleW & "px;"">" & _
-			"<tbody>" & _
+	strLine = strLine &_	
+	 "<div id='divDiagram' name='divDiagram' style='color: " & HttpTextColor3 & " ;background-color: " & HttpBgColor2 & "; " &_ 
+	 "width: " & nTable2_W - 4 & "px; height: " & BackgroundDivH & "px;" &_
+	 "border-style: none; border-color: transparent; " &_	 
+	 "position: absolute; top: " & 2 * LoginTitleH + nLine * cellH + 4 * nSpace & "px; left: " & Int(LoginTitleW/4) + 2 &"px; '>" &_
+	 "</div>"
+	
+	strLine = strLine &_	
+	 "<div id='divDiagram' name='divDiagram' style='color: " & HttpTextColor3 & " ;background-color: transparent; " &_ 
+	 "width: " & DiagramW & "px; height: " & DiagramH & "px;" &_
+	 "position: absolute; bottom: " & 3 * LoginTitleH & "px; left: " & Int(3 * LoginTitleW/8) & "px; '>" &_
+	 "<img src=" & DiagramFigure & " alt="" border=""0"" height=""" & ImageH & """ width=""" & ImageW & """ valign=""middle"" style="" position: relative; left: " & 20 & "px""></img>" &_
+	 "</div>"
+
+   strLine = strLine &_	
+	 "<div id='divDiagram' name='divInterfaces' style='color: " & HttpTextColor3 & " ;background-color: transparent; " &_ 
+	 "width: " & DiagramW & "px; height: " & DiagramH & "px;" &_
+	 "position: absolute; bottom: " & 3 * LoginTitleH & "px; left: " & Int(3 * LoginTitleW/8) & "px; '>" 
+
+   strLine = strLine &_
+		"<table border=""0"" cellpadding=""1"" cellspacing=""1"" height=""" & 9 * cellH & """ width=""" & Int(DiagramW) & """ valign=""middle""" &_ 
+		"style="" position: relative; top: 0px; left: 0px;" &_
+		"border-collapse: collapse; border-style: none ; background-color: " & HttpBgColor6 & "'; width: " & DiagramW & "px;"">" & _
+			"<tbody>" &_
+			    "<tr>"&_
+					htmlEmptyCell & htmlEmptyCell & htmlEmptyCell & UNI_CELL(1,0,"R") & _
+				"</tr>" &_
+			    "<tr>"&_
+					htmlEmptyCell & htmlEmptyCell & htmlEmptyCell & htmlEmptyCell & _
+				"</tr>" &_
 				"<tr>" &_
-					"<td style=""border-style: none; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & Int(LoginTitleH/4) & """ width=""" & LoginTitleW & """>" & _
-					"</td>"&_
-					"<td style=""border-style: none; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & Int(LoginTitleH/4) & """ width=""" & LoginTitleW & """>" & _
-					"</td>"&_
-					"<td style=""border-style: none; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & Int(LoginTitleH/4) & """ width=""" & LoginTitleW & """>" & _
-					"</td>"&_
-					"<td style=""border-style: none; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & Int(LoginTitleH/4) & """ width=""" & LoginTitleW & """>" & _
-					"</td>"&_
-				"</tr></tbody></table>"
+					UNI_CELL(0,0,"L")  & htmlEmptyCell & htmlEmptyCell & UNI_CELL(1,1,"R") & _
+				"</tr>" &_
+				"<tr>" &_
+					htmlEmptyCell & htmlEmptyCell & htmlEmptyCell & htmlEmptyCell & _
+    			"</tr>" &_
+				"<tr>" &_
+					htmlEmptyCell & UNI_CELL(0,2,"R") & UNI_CELL(1,4,"L") & htmlEmptyCell & _
+				"</tr>" &_
+				"<tr>" &_
+					UNI_CELL(0,1,"L") & htmlEmptyCell & htmlEmptyCell & UNI_CELL(1,2,"R") & _
+    			"</tr>" &_
+				"<tr>" &_
+					htmlEmptyCell & htmlEmptyCell & htmlEmptyCell & htmlEmptyCell & _
+				"</tr>" &_
+				"<tr>" &_
+					htmlEmptyCell & htmlEmptyCell & htmlEmptyCell & UNI_CELL(1,3,"R") & _
+				"</tr>" &_
+				"</tbody>" &_
+		"</table>"	&_
+		"</div>"
 	'------------------------------------------------------
 	'   BOTTOM INFO BAR 
 	'------------------------------------------------------
@@ -1817,62 +1880,9 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 						"px;' name='EXIT' onclick=document.all('ButtonHandler').value='Cancel';><u>E</u>xit</button>" & _	
 					"</td>" & _
 		"</tr></tbody></table>"
+		
 	'-----------------------------------------------------------------
-	' NETWORK DIAGRAM
-	'-----------------------------------------------------------------
-	Dim DiagramW, DiagramH, ImageW, ImageH
-	DiagramW = 700 : DiagramH = 250
-	ImageW = DiagramW  : ImageH = DiagramH 
-
-    htmlEmptyCell = _
-        	"<td style="" border-color: transparent; border-style: none;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(DiagramW/6) & """></td>"
-	nLine = nLine + 2
-	strLine = strLine &_	
-	 "<div id='divDiagram' name='divDiagram' style='color: " & HttpTextColor3 & " ;background-color: transparent; " &_ 
-	 "width: " & DiagramW & "px; height: " & DiagramH & "px;" &_
-	 "position: absolute; bottom: " & 2 * LoginTitleH & "px; left: " & Int(3 * LoginTitleW/8) & "px; '>" &_
-	 "<img src=" & DiagramFigure & " alt="" border=""0"" height=""" & ImageH & """ width=""" & ImageW & """ valign=""middle"" style="" position: relative; left: " & 20 & "px""></img>" &_
-	 "</div>"
-
-   strLine = strLine &_	
-	 "<div id='divDiagram' name='divInterfaces' style='color: " & HttpTextColor3 & " ;background-color: transparent; " &_ 
-	 "width: " & DiagramW & "px; height: " & DiagramH & "px;" &_
-	 "position: absolute; bottom: " & 2 * LoginTitleH & "px; left: " & Int(3 * LoginTitleW/8) & "px; '>" 
-
-   strLine = strLine &_
-		"<table border=""0"" cellpadding=""1"" cellspacing=""1"" height=""" & 9 * cellH & """ width=""" & Int(DiagramW) & """ valign=""middle""" &_ 
-		"style="" position: relative; top: 0px; left: 0px;" &_
-		"border-collapse: collapse; border-style: none ; background-color: " & HttpBgColor6 & "'; width: " & DiagramW & "px;"">" & _
-			"<tbody>" &_
-			    "<tr>"&_
-					htmlEmptyCell & htmlEmptyCell & htmlEmptyCell & UNI_CELL(1,0,"R") & _
-				"</tr>" &_
-			    "<tr>"&_
-					htmlEmptyCell & htmlEmptyCell & htmlEmptyCell & htmlEmptyCell & _
-				"</tr>" &_
-				"<tr>" &_
-					UNI_CELL(0,0,"L")  & htmlEmptyCell & htmlEmptyCell & UNI_CELL(1,1,"R") & _
-				"</tr>" &_
-				"<tr>" &_
-					htmlEmptyCell & htmlEmptyCell & htmlEmptyCell & htmlEmptyCell & _
-    			"</tr>" &_
-				"<tr>" &_
-					htmlEmptyCell & UNI_CELL(0,2,"R") & UNI_CELL(1,4,"L") & htmlEmptyCell & _
-				"</tr>" &_
-				"<tr>" &_
-					UNI_CELL(0,1,"L") & htmlEmptyCell & htmlEmptyCell & UNI_CELL(1,2,"R") & _
-    			"</tr>" &_
-				"<tr>" &_
-					htmlEmptyCell & htmlEmptyCell & htmlEmptyCell & htmlEmptyCell & _
-				"</tr>" &_
-				"<tr>" &_
-					htmlEmptyCell & htmlEmptyCell & htmlEmptyCell & UNI_CELL(1,3,"R") & _
-				"</tr>" &_
-				"</tbody>" &_
-		"</table>"	&_
-		"</div>"
-	'-----------------------------------------------------------------
-	' HTML Form Parameaters
+	' HTML Form Parameters
 	'-----------------------------------------------------------------
     g_objIE.Document.Body.innerHTML = strLine
     g_objIE.MenuBar = False
@@ -1891,7 +1901,23 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 	For i=0 to 2 
 		g_objIE.Document.All("BW_Param_1")(i).Value = "N/A"
 	Next
-
+    
+	For i = 1 to 13
+		Select Case i 
+			Case 1,10
+				'g_objIE.document.getElementById("Button"&i).style.backgroundColor = "#101010"
+				g_objIE.document.getElementById("Button"&i).style.borderRadius = "25px"
+				g_objIE.document.getElementById("Button"&i).style.opacity = 0
+			Case 11
+			   g_objIE.document.getElementById("Button"&i).style.borderRadius = "25px 25px 0px 0px "
+			Case 12
+			   g_objIE.document.getElementById("Button"&i).style.borderRadius = "0px 0px 0px 25px "
+			Case 13
+			   g_objIE.document.getElementById("Button"&i).style.borderRadius = "0px 0px 25px 0px "			
+			Case Else
+				g_objIE.document.getElementById("Button"&i).style.borderRadius = "25px"
+		End Select
+	Next
 	g_objIE.Document.All("UNI00").Value = vNodes(0,0)
 	g_objIE.Document.All("UNI01").Value = vNodes(0,1)
 	g_objIE.Document.All("UNI02").Value = vNodes(0,2)
@@ -1903,9 +1929,6 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 	g_objIE.Document.All("Current_config")(0).Value = DUT_Platform
 	g_objIE.Document.All("Current_config")(1).Value = "Unknown"
 	g_objIE.document.getElementById("Input_Param_0").selectedIndex = vSessionTmp(0)
-'   g_objIE.Document.All("ConfigLocation")(0).Select
-'   g_objIE.Document.All("ConfigLocation")(0).Checked = false
-'   g_objIE.Document.All("ConfigLocation")(0).Click	
 	'--------------------------------------
 	' WAIT UNTIL IE FORM LOADED
 	'--------------------------------------
@@ -1960,33 +1983,6 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
     Call GetFileLineCountSelect(strConfigFileL,vConfigFileLeft,"","","",0)
 	Call LoadBwProfiles(g_objIE, "bw_profile_1", "BW_Param_1")
 	Call LoadBwProfiles(g_objIE, "bw_profile_2", "BW_Param_2")	
-'	If Not GetFilterList(vConfigFileLeft, vFilterList, vPolicerList, vCIR, vCBS, 1) Then 
-'	    g_objIE.document.getElementById("bw_profile_1").length = 1
-'	    g_objIE.document.getElementById("bw_profile_1").Options(0).Text = "N/A"
-'	    g_objIE.document.getElementById("bw_profile_1").SelectedIndex = 0
-'	    g_objIE.document.getElementById("bw_profile_1").Disabled = True
-'	    g_objIE.document.getElementById("bw_profile_2").Options(0).Text = "N/A"
-'	    g_objIE.document.getElementById("bw_profile_2").SelectedIndex = 0
-'	    g_objIE.document.getElementById("bw_profile_2").Disabled = True
-'		
-'	Else
-'		g_objIE.document.getElementById("bw_profile_1").Disabled = False
-'		For n = 0 to UBound(vFilterList)-1
-'	        g_objIE.document.getElementById("bw_profile_1").length = n + 1		
-'			g_objIE.document.getElementById("bw_profile_1").Options(n).text = vFilterList(n)
-'		Next
-'		If vPolicerList(0) <> "" Then g_objIE.Document.All("BW_Param_1")(0).Value = vPolicerList(0) Else g_objIE.Document.All("BW_Param_1")(0).Value = "N/A" End If
-'		If vCIR(0) <> "" Then g_objIE.Document.All("BW_Param_1")(1).Value = vCIR(0) Else g_objIE.Document.All("BW_Param_1")(1).Value = "N/A" End If
-'		If vCBS(0) <> "" Then g_objIE.Document.All("BW_Param_1")(2).Value = vCBS(0) Else g_objIE.Document.All("BW_Param_1")(2).Value = "N/A" End If	
-'		g_objIE.document.getElementById("bw_profile_2").Disabled = False
-'		For n = 0 to UBound(vFilterList)-1
-'			g_objIE.document.getElementById("bw_profile_2").Options(n).text = vFilterList(n)
-'		Next
-'		If vPolicerList(0) <> "" Then g_objIE.Document.All("BW_Param_2")(0).Value = vPolicerList(0) Else g_objIE.Document.All("BW_Param_2")(0).Value = "N/A" End If
-'		If vCIR(0) <> "" Then g_objIE.Document.All("BW_Param_2")(1).Value = vCIR(0) Else g_objIE.Document.All("BW_Param_2")(1).Value = "N/A" End If
-'		If vCBS(0) <> "" Then g_objIE.Document.All("BW_Param_2")(2).Value = vCBS(0) Else g_objIE.Document.All("BW_Param_2")(2).Value = "N/A" End If			
-'	End If
-
 	'----------------------------------------------------
 	'  GET MAIN FORM PID
 	'----------------------------------------------------
@@ -2542,7 +2538,19 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 					IE_String = Right(IE_String,Len(IE_String) - 100)
 				Next
 	
-	Call IE_Unhide(obgIE_XLS)			    
+	            Call IE_Unhide(obgIE_XLS)
+			Case "COPY_CLPBRD_L"
+			    strConfigFileL = vFlavors(nService, nFlavor,0) & "-" & nTask & "-" & Platform & "-l.conf"
+			    MsgBox strConfigFileL
+				Call CopyFileToClipboard(SourceFolder & "\" & vSvc(nService,1) & "\" & strConfigFileL)
+				g_objIE.Document.All("ButtonHandler").Value = "None"
+				
+			Case "COPY_CLPBRD_R"
+				strConfigFileR = vFlavors(nService, nFlavor,0) & "-" & nTask & "-" & Platform & "-r.conf"
+			    MsgBox strConfigFileR
+				Call CopyFileToClipboard(SourceFolder & "\" & vSvc(nService,1) & "\" & strConfigFileR)
+				g_objIE.Document.All("ButtonHandler").Value = "None"
+				
 			Case "POPULATE_ORIG"
 				vvMsg(0,0) = "WOULD YOU LIKE TO POPULATE :" 		: vvMsg(0,1) = "bold" 	: vvMsg(0,2) =  HttpTextColor1
 				vvMsg(1,0) = "ALL ORIGINAL CONFIGS" 			    : vvMsg(1,1) = "bold" 	: vvMsg(1,2) =  HttpTextColor1
@@ -2553,6 +2561,7 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 				Else 
 					g_objIE.Document.All("ButtonHandler").Value = "None"
 				End If
+				
 			Case "POPULATE_DNLD"
 				vvMsg(0,0) = "WOULD YOU LIKE TO POPULATE :" 		: vvMsg(0,1) = "bold" 	: vvMsg(0,2) =  HttpTextColor1
 				vvMsg(1,0) = "ALL DOWNLOADED CONFIGS" 			    : vvMsg(1,1) = "bold" 	: vvMsg(1,2) =  HttpTextColor1
@@ -4527,3 +4536,23 @@ Dim nFilter, strFilter
 	End If
 	Call TrDebug ("ApplyFilter List all: " & ApplyFilterList, "" , objDebug, MAX_WIDTH, 1, 1)	
 End Function
+'----------------------------------------------
+'  Function CopyFileToClipboard()
+'-----------------------------------------------
+Function CopyFileToClipboard(strFileName)
+Dim oExec, oIn, g_objShell,ClipBoardText,objDataFileName
+    Set g_objShell = WScript.CreateObject("WScript.Shell")
+	Set oExec = g_objShell.Exec("clip")
+	Set oIn = oExec.stdIn
+	On Error Resume Next
+		Err.Clear
+		Set objDataFileName = objFSO.OpenTextFile(strFileName,1,True)
+		ClipBoardText = objDataFileName.ReadAll
+		objDataFileName.close
+		oIn.WriteLine ClipBoardText
+		oIn.Close
+		If Err.Number > 0 Then MsgBox "Something went wrong!" & chr(13) & "Can't copy file content to clipboard." & chr(13) & strFileName
+		Err.clear
+	On Error Goto 0
+End Function
+

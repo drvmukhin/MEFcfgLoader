@@ -25,7 +25,7 @@ Dim objTab_L, objTab_R
 Dim vWaitForCommit, vModels, vWaitForFtp
 vWaitForftp = Array("No route to host","Connected to","Connection refused")
 vWaitForCommit = Array("error: configuration check-out failed","error: commit failed","commit complete")
-vModels = Array("acx5096","acx5048","acx1100","acx1000","acx2100","acx2200","mx80","mx104","mx240","mx480","mx960")
+vModels = Array("acx5096","acx5048","acx500","acx1100","acx1000","acx2100","acx2200","mx80","mx104","mx240","mx480","mx960")
 Dim strFileSettings
 Dim vDelim, vParamNames
     Const SECURECRT_FOLDER = "SecureCRT Folder"
@@ -89,9 +89,8 @@ Sub Main()
 	strDirectoryWork = crt.Arguments(4)
     strPlatform = crt.Arguments(6)
 '	iePID = crt.Arguments(7)
-'-------------------------------------------------------
-' CHECK THE PLATFORM TYPE
-'-------------------------------------------------------
+	'
+	' CHECK THE PLATFORM TYPE. This an old method. Now script will use same name which is already loaded
 	For nResult = 0 to Ubound(vModels)
 		If LCase(strPlatform) = LCase(vModels(nResult)) Then Exit For
     Next
@@ -256,9 +255,8 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	Call TrDebug_No_Date ("LOADING CONFIGURATION FOR " & strFlavor & "-" & strTask & " TO LEFT NODE ", "", objDebug, MAX_LEN, 3, 1)		
 	objTab_L.Caption = strHostL
 	objTab_L.Screen.Synchronous = True
-	'--------------------------------------------------------------------------------
+	'
     '  Get actual host name of the box
-    '--------------------------------------------------------------------------------
 	objTab_L.Screen.Send chr(13)
 	strLine = objTab_L.Screen.ReadString (">")
     If InStr(strLine,"@") Then strHostL = Split(strLine,"@")(1)
@@ -269,9 +267,8 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 		objTab_L.Session.Disconnect
     	Exit Sub
 	End If
-'---------------------------------------------
-'   Save current global group L
-'---------------------------------------------
+	'
+	'   Save current global group L
 	objTab_L.Screen.Send "edit" & chr(13)
 	objTab_L.Screen.WaitForString "@" & strHostL & "#"
 	objTab_L.Screen.Send "edit groups global" & chr(13)
@@ -282,9 +279,9 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	objTab_L.Screen.WaitForString "@" & strHostL & "#"
 	objTab_L.Screen.Send "exit" & chr(13)
 	objTab_L.Screen.WaitForString "@" & strHostL & ">"
-'---------------------------------------------
-'   START FTP SESSION L
-'---------------------------------------------
+	'---------------------------------------------
+	'   START FTP SESSION L
+	'---------------------------------------------
 	objTab_L.Screen.Send "ftp "  & strFTP_ip & chr(13)
 	nResult = objTab_L.Screen.WaitForStrings (vWaitForFtp, 5)
      Select Case nResult
@@ -320,9 +317,8 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	objTab_L.Screen.WaitForString "ftp>"
 	objTab_L.Screen.Send "binary" & chr(13)
 	objTab_L.Screen.WaitForString "ftp>"
-'---------------------------------------------
-'   FTP TRANSFER global L
-'---------------------------------------------
+	'
+	'   FTP TRANSFER a default configuration for global group  to L-Node
 	objTab_L.Screen.Send "get " & " ./" & strGlobalFileL & " " & strGlobalFileL & chr(13)
 	If Not objTab_L.Screen.WaitForString ("Successfully transferred", 60) Then
 	    Call  TrDebug_No_Date ("FTP TRANSFER " & strGlobalFileL, "FAILED", objDebug, MAX_LEN, 1, 1)
@@ -331,9 +327,8 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	    Call  TrDebug_No_Date ("FTP TRANSFER " & strGlobalFileL, "OK", objDebug, MAX_LEN, 1, 1)  
 	End If
 	objTab_L.Screen.WaitForString "ftp>"
-'---------------------------------------------
-'   FTP TRANSFER re0 L
-'---------------------------------------------
+	'
+	'   FTP TRANSFER a default configuration for re0 group to L-Node
 	objTab_L.Screen.Send "get " & " ./" & strRe0FileL & " " & strRe0FileL & chr(13)
 	If Not objTab_L.Screen.WaitForString ("Successfully transferred", 60) Then
 	    Call  TrDebug_No_Date ("FTP TRANSFER " & strRe0FileL, "FAILED", objDebug, MAX_LEN, 1, 1)
@@ -342,9 +337,8 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	    Call  TrDebug_No_Date ("FTP TRANSFER " & strRe0FileL, "OK", objDebug, MAX_LEN, 1, 1)   
 	End If
     objTab_L.Screen.WaitForString "ftp>"
-'---------------------------------------------
-'   FTP TRANSFER main config L
-'---------------------------------------------
+	'
+	'   FTP TRANSFER new configuration file to L-Node
 	objTab_L.Screen.Send "get " & SourceFolder & strService & "/" & strConfigFileL & " " & strConfigFileL & chr(13)
 	If Not objTab_L.Screen.WaitForString ("Successfully transferred", 60) Then
 	    Call  TrDebug_No_Date ("FTP TRANSFER " & strConfigFileL, "FAILED", objDebug, MAX_LEN, 1, 1)
@@ -355,9 +349,11 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
     objTab_L.Screen.WaitForString "ftp>"
 	objTab_L.Screen.Send "quit" & chr(13)
 	objTab_L.Screen.WaitForString "@" & strHostL & ">"
-'---------------------------------------------
-'   LOAD main config L
-'---------------------------------------------
+    '--------------------------------------------------------
+	'   START WITH LOADING NEW CONFIG ON LEFT NODE
+	'--------------------------------------------------------
+	'
+	'   LOAD new configuration L
 	objTab_L.Screen.Send "edit" & chr(13)
 	objTab_L.Screen.WaitForString "@" & strHostL & "#"
 	objTab_L.Screen.Send "load update " & strConfigFileL & chr(13)
@@ -368,9 +364,26 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	    Call  TrDebug_No_Date ("LOAD " & strConfigFileL, "OK", objDebug, MAX_LEN, 1, 1)   
 	End If
 	objTab_L.Screen.WaitForString "@" & strHostL & "#"
-'---------------------------------------------
-'   LOAD grp-old-global.conf L
-'---------------------------------------------
+	'
+	'  Get the name of the re group: member0 or re0
+	objTab_L.Screen.Send "show groups ?"
+	nResult = objTab_L.Screen.WaitForStrings (Array("re0","member0","@" & strHostL & "#"), 5)
+    Select Case nResult
+        Case 0,3
+			Call  TrDebug_No_Date ("CAN'T RETRIEVE THE NAME OF THE RE-Group on" & strHostL, "TIME OUT", objDebug, MAX_LEN, 1, 1)   
+			Call  TrDebug_No_Date ("Expected ""re0"" or ""member0"" group name", "TIME OUT", objDebug, MAX_LEN, 1, 1)   			
+			Exit Sub
+        Case 1 
+			strRe0 = " re0 "
+
+        Case 2 
+			strRe0 = " member0 "
+     End Select	
+	objTab_L.Screen.WaitForString "show groups "
+    objTab_L.Screen.Send strRe0 & chr(13)
+    objTab_L.Screen.WaitForString "@" & strHostL & "#"	
+	'
+	'   LOAD grp-old-global.conf on L-Node
 	objTab_L.Screen.Send "load replace grp-global-original.conf" & chr(13)
 	If Not objTab_L.Screen.WaitForString ("load complete", 60) Then
 	    Call  TrDebug_No_Date ("LOAD grp-global-original.conf", "FAILED", objDebug, MAX_LEN, 1, 1)
@@ -379,10 +392,8 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	    Call  TrDebug_No_Date ("LOAD grp-global-original.conf", "OK", objDebug, MAX_LEN, 1, 1)   
 	End If
 	objTab_L.Screen.WaitForString "@" & strHostL & "#"
-'   "save grp-global-original.conf"	
-'---------------------------------------------
-'   LOAD global L
-'---------------------------------------------
+	'
+	'   LOAD merge default global configuration on L-Node
     objTab_L.Screen.Send "edit groups global" & chr(13)	
 	objTab_L.Screen.WaitForString "@" & strHostL & "#"
 	objTab_L.Screen.Send "load merge relative " & strGlobalFileL & chr(13)
@@ -395,9 +406,8 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	objTab_L.Screen.WaitForString "@" & strHostL & "#"
 	objTab_L.Screen.Send "exit" & chr(13)
 	objTab_L.Screen.WaitForString "@" & strHostL & "#"
-'---------------------------------------------
-'   LOAD re0 L
-'---------------------------------------------
+	'
+	'   LOAD re0 L
     objTab_L.Screen.Send "edit groups" & strRe0 & chr(13)	
 	objTab_L.Screen.WaitForString "@" & strHostL & "#"
 	objTab_L.Screen.Send "load update relative " & strRe0FileL & chr(13)
@@ -410,16 +420,15 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	objTab_L.Screen.WaitForString "@" & strHostL & "#"
 	objTab_L.Screen.Send "exit" & chr(13)
 	objTab_L.Screen.WaitForString "@" & strHostL & "#"
-'---------------------------------------------
-'   APPLY-GROUPS re0 and global on L NODE
-'---------------------------------------------
+	'
+	'   APPLY-GROUPS re0 and global on L NODE
     objTab_L.Screen.Send "set apply-groups global" & chr(13)	
 	objTab_L.Screen.WaitForString "@" & strHostL & "#"	
     objTab_L.Screen.Send "set apply-groups" & strRe0 & chr(13)	
 	objTab_L.Screen.WaitForString "@" & strHostL & "#"	
-'---------------------------------------------
-'   COMMIT L
-'---------------------------------------------	
+	'---------------------------------------------
+	'   COMMIT CONFIGURATION ON LEFT NODE
+	'---------------------------------------------	
     Call  TrDebug_No_Date ("COMMIT " & strHostL, "......IN PROGRESS", objDebug, MAX_LEN, 1, nInfo)   
 	objTab_L.Screen.Send "commit" & chr(13)
 	' - After commit change the prompt
