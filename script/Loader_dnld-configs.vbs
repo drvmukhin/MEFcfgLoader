@@ -25,9 +25,12 @@ Dim vWaitForCommit, vModels, vWaitForFtp
 vWaitForftp = Array("No route to host","Connected to","Connection refused")
 vWaitForCommit = Array("error: configuration check-out failed","error: commit failed","commit complete")
 vModels = Array("acx5096","acx5048","acx1100","acx1000","acx2100","acx2200","mx80","mx104","mx240","mx480","mx960")
-Dim strFileSettings
+Dim strFileSettings,strFileParam
 Dim vDelim, vParamNames
-    Const SECURECRT_FOLDER = "SecureCRT Folder"
+    Const UNKNOWN = "Unknown"
+	Const SECURECRT_FOLDER = "SecureCRT Folder"
+	Const SECURECRT_SESSION_FOLDER = "SecureCRT Session Folder"
+	Const FTP_SERVER_FOLDER = "FTP Server Folder"
     Const WORK_FOLDER = "Work Folder"
     Const CONFIGS_FOLDER = "Configuration Files Folder"
     Const CONFIGS_PARAM  = "MEF Service Parameters"
@@ -36,6 +39,7 @@ Dim vDelim, vParamNames
     Const CONFIGS_RE1  = "CONFIGS_RE1"
     Const Node_Left_IP  = "Left Node IP"
     Const Node_Right_IP  = "Right Node IP"
+	Const HIDE_CRT = "Hide Terminal Session"
     Const FTP_IP  = "FTP IP"
     Const FTP_User  = "FTP User"
     Const FTP_Password  = "FTP Password"
@@ -54,8 +58,42 @@ Dim vDelim, vParamNames
 	Const WorkBookPrefix = "WorkBookPrefix"
 	Const SECURECRT_L_SESSION = "Left Node Session"
 	Const SECURECRT_R_SESSION = "Right Node Session"
+
+
 ReDim vSettings(30)
-vDelim = Array("=",",",":")	
+ReDim vParamNames(UBound(vSettings))
+    vParamNames(0) = Node_Left_IP
+    vParamNames(1) = Node_Right_IP
+    vParamNames(2) = FTP_IP
+    vParamNames(3) = FTP_User
+    vParamNames(4) = FTP_Password
+	vParamNames(5) = SECURECRT_FOLDER
+    vParamNames(6) = WORK_FOLDER
+    vParamNames(7) = CONFIGS_FOLDER
+    vParamNames(8) = Orig_Folder
+	vParamNames(9) = Dest_Folder
+	vParamNames(10) = SECURECRT_L_SESSION
+	vParamNames(11) = SECURECRT_R_SESSION
+    vParamNames(12) = CONFIGS_PARAM
+	vParamNames(13) = PLATFORM_NAME
+    vParamNames(14) = PLATFORM_INDEX
+    vParamNames(15) = SECURECRT_SESSION_FOLDER
+    vParamNames(16) = FTP_SERVER_FOLDER
+    vParamNames(17) = HIDE_CRT
+    vParamNames(18) = UNKNOWN
+    vParamNames(19) = UNKNOWN
+	vParamNames(20) = UNKNOWN
+    vParamNames(21) = UNKNOWN
+    vParamNames(22) = UNKNOWN
+    vParamNames(23) = UNKNOWN
+	vParamNames(24) = UNKNOWN
+	vParamNames(25) = UNKNOWN
+	vParamNames(26) = UNKNOWN
+    vParamNames(27) = CONFIGS_GLOBAL
+	vParamNames(28) = CONFIGS_RE0
+    vParamNames(29) = CONFIGS_RE1
+
+	vDelim = Array("=",",",":")	
 nDebug = 0
 nInfo = 1
 Platform = "acx"
@@ -114,85 +152,50 @@ Else
     Call FocusToParentWindow(strPID)
 End If
 Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentPID,"",objDebug, MAX_LEN, 1, nDebug)								
-'-------------------------------------------------------------------------------------------
-'  	LOAD INITIAL CONFIGURATION FROM SETTINGS FILE
-'-------------------------------------------------------------------------------------------
-	If objFSO.FileExists(strFileSettings) Then 
-		nSettings = GetFileLineCountByGroup(strFileSettings, vLines,"Settings","","",0)
-		For nInd = 0 to nSettings - 1 
-			Select Case Split(vLines(nInd),"=")(0)
-					Case SECURECRT_FOLDER
-								vSettings(5) = vLines(nInd)
-								strDirectoryVandyke = Split(vLines(nInd),"=")(1)
-					Case WORK_FOLDER
-								vSettings(6) = WORK_FOLDER & "=" & strDirectoryWork
-					Case CONFIGS_FOLDER
-								vSettings(7) = vLines(nInd)
-								strDirectoryConfig =  Split(vLines(nInd),"=")(1)
-					Case CONFIGS_PARAM
-								vSettings(12) = vLines(nInd)
-								strFileParam =  Split(vLines(nInd),"=")(1)
-					Case CONFIGS_GLOBAL
-								vSettings(27) = vLines(nInd)
-								strCfgGlobal =  Split(vLines(nInd),"=")(1)
-					Case CONFIGS_RE0
-								vSettings(28) = vLines(nInd)
-								strCfgRE0 =  Split(vLines(nInd),"=")(1)
-					Case CONFIGS_RE1
-								vSettings(29) = vLines(nInd)
-								strCfgRE1 =  Split(vLines(nInd),"=")(1)
-					Case PLATFORM_NAME
-					            vSettings(13) = vLines(nInd)
-								DUT_Platform = Split(vLines(nInd),"=")(1)
-					Case PLATFORM_INDEX
-					            vSettings(14) = vLines(nInd)					
-								Platform = Split(vLines(nInd),"=")(1)
-					Case Node_Left_IP
-								vSettings(0) = vLines(nInd)
-								strLeft_ip =  Split(vLines(nInd),"=")(1)
-					Case Node_Right_IP
-								vSettings(1) = vLines(nInd)
-								strRight_ip =  Split(vLines(nInd),"=")(1)
-					Case FTP_IP
-								vSettings(2) = vLines(nInd)
-								strFTP_ip =  Split(vLines(nInd),"=")(1)
-					Case FTP_User
-								vSettings(3) = vLines(nInd)
-								strFTP_name =  Split(vLines(nInd),"=")(1)
-					Case FTP_Password
-								vSettings(4) = vLines(nInd)
-								strFTP_pass =  Split(vLines(nInd),"=")(1)
-			End Select
-		Next
-	End If
+	'Set original values for the settings values
+	Call SetOriginalSettings(vSettings)		
+    'Load Settings
+    Select Case LoadSettings(strFileSettings, strFileParam)
+	    Case -1
+			MsgBox "Cant' find Settings file: " & chr(13) & strFileParam
+			Exit Sub
+		Case -2 
+			MsgBox "Cant' find Settings file: " & chr(13) & strFileSettings
+			Exit Sub
+	End Select
+	'-------------------------------------------------------------------------------------------
+	'  	LOAD INITIAL CONFIGURATION FROM SETTINGS FILE
+	'-------------------------------------------------------------------------------------------
+	strDirectoryVandyke = GetValue(SECURECRT_FOLDER)
+	strDirectoryConfig = GetValue(7)
+	strCfgGlobal = GetValue(27)
+	strCfgRE0 =    GetValue(28)
+	strCfgRE1 =    GetValue(29)
+	DUT_Platform = GetValue(13)
+	Platform =     GetValue(14)
+	strLeft_ip =   GetValue(0)
+	strRight_ip =  GetValue(1)
+	strFTP_ip =    GetValue(2)
+	strFTP_name =  GetValue(3)
+	strFTP_pass =  GetValue(4)
 	vWaitForftp(1) = "Connected to " & strFTP_ip
-'--------------------------------------------------------------------------------
-'          GET NAME OF THE TELNET SESSIONS
-'--------------------------------------------------------------------------------
-	nInventory = GetFileLineCountByGroup(strFileSettings, vLines,"Sessions","","",0)
-	For nInd = 0 to nInventory - 1
-		Select Case Split(vLines(nInd),"=")(0)
-			Case SECURECRT_L_SESSION
-						vSettings(10) = Split(vLines(nInd),"=")(1)
-						strFolder = Split(vSettings(10), ",")(0) & "/"
-						strSessionL = Split(vSettings(10), ",")(1)
-						strHostL = Split(vSettings(10), ",")(2) 
-						strLogin = Split(vSettings(10), ",")(3)
-			Case SECURECRT_R_SESSION
-						vSettings(11) = Split(vLines(nInd),"=")(1)
-						strFolder = Split(vSettings(11), ",")(0) & "/" 
-						strSessionR = Split(vSettings(11), ",")(1)
-						strHostR = Split(vSettings(11), ",")(2) 
-						strLogin = Split(vSettings(11), ",")(3)
-		End Select
-	Next
-'-------------------------------------------------------------------------------------------
-'        SET SERVICE PARAM FULL PATH
-'-------------------------------------------------------------------------------------------
-	strFileParam = strDirectoryWork & "\config\" & strFileParam
-'-------------------------------------------------------------------------------------------
-'  	LOAD TESTBED TOPOLOGY
-'-------------------------------------------------------------------------------------------
+	'--------------------------------------------------------------------------------
+	'          GET NAME OF THE TELNET SESSIONS
+	'--------------------------------------------------------------------------------
+	strLine = GetValue(10)
+	strFolder =   Trim(Split(strLine, ",")(0)) & "/"
+	strSessionL = Trim(Split(strLine, ",")(1))
+	strHostL =    Trim(Split(strLine, ",")(2)) 
+	strLogin =    Trim(Split(strLine, ",")(3))
+
+	strLine = GetValue(11)
+	strFolder =   Trim(Split(strLine, ",")(0)) & "/"
+	strSessionR = Trim(Split(strLine, ",")(1))
+	strHostR =    Trim(Split(strLine, ",")(2)) 
+	strLogin =    Trim(Split(strLine, ",")(3))
+	'-------------------------------------------------------------------------------------------
+	'  	LOAD TESTBED TOPOLOGY
+	'-------------------------------------------------------------------------------------------
 	If Not objFSO.FileExists(strFileParam) Then 
 		MsgBox "MEF Parameters File: " & chr(13) & strFileParam  & " not found!"
 		Exit Sub
@@ -784,3 +787,97 @@ Dim objEnvar
 	set objEnvar = Nothing
 	GetScreenUserSYS = strScreenUser
 End Function
+'----------------------------------------------
+'Function  GetValue(nInd)
+'----------------------------------------------
+Function GetValue(nInd)
+Dim i
+	GetValue = UNKNOWN
+	If IsNumeric(nInd) Then 
+		GetValue = Trim(Split(vSettings(nInd),"=")(1))
+	Else 
+		For i=0 to UBound(vParamNames) - 1
+		    If vParamNames(i) = nInd Then 
+				GetValue = Trim(Split(vSettings(i),"=")(1))
+				Exit For
+			End If 
+		Next 
+	End If
+End Function
+'---------------------------------------------------------
+'  Function LoadSettings(strFileSettings, strFileParam)
+'---------------------------------------------------------
+Function LoadSettings(strFileSettings, ByRef strFileParam)
+Dim nSettings, vLines, nInd
+	If objFSO.FileExists(strFileSettings) Then 
+		nSettings = GetFileLineCountByGroup(strFileSettings, vLines,"Settings","Sessions","Templates",0)
+		For nInd = 0 to nSettings - 1 
+			For i = 0 to UBound(vSettings) - 1
+				Select Case i
+					Case 5,6,15,16
+					Case else
+						If vParamNames(i) = Trim(Split(vLines(nInd),"=")(0)) Then 
+							vSettings(i) = vLines(nInd)
+						End If
+				End Select 
+			Next
+		Next
+	Else 
+	    LoadSettings = -2
+		Exit Function
+	End If 
+	strFileParam = GetValue(CONFIGS_PARAM)
+	If objFSO.FileExists(strFileParam) Then 
+		nSettings = GetFileLineCountByGroup(strFileParam, vLines,"Settings","Sessions","Templates",0)
+		For nInd = 0 to nSettings - 1 
+			For i = 0 to UBound(vSettings) - 1
+				Select Case i
+					Case 5,6,15,16
+					Case else
+						If vParamNames(i) = Trim(Split(vLines(nInd),"=")(0)) Then 
+							vSettings(i) = vLines(nInd)
+						End If
+				End Select 
+			Next
+		Next
+	Else 
+	    LoadSettings = -1
+		Exit Function
+	End If
+    Call SetValue(5,strCRT_InstallFolder,False)
+	Call SetValue(6,strDirectoryWork,False)
+	Call SetValue(15,strCRT_SessionFolder,False)
+	Call SetValue(16,strFTP_Folder,False)
+	strDirectoryConfig = GetValue(7)
+	If GetValue(17) = "True" Then nWindowState = HideTerminal Else nWindowState = ShowTerminal
+	LoadSettings = 1
+End Function 
+'----------------------------------------------
+'Function  SetValue(nInd)
+'----------------------------------------------
+Function SetValue(nInd,strValue,bNormal)
+Dim i, nTab
+    If bNormal Then nTab = "" Else nTab = Space(30 - Len(vParamNames(nInd)))
+	SetValue = False
+	If IsNumeric(nInd) Then 
+		vSettings(nInd) = vParamNames(nInd) & Space(30 - Len(vParamNames(nInd))) & "= " & strValue
+		SetValue = True
+	Else 
+		For i=0 to UBound(vParamNames) - 1
+		    If vParamNames(i) = nInd Then 
+				vSettings(i) = vParamNames(i) & Space(30 - Len(vParamNames(i))) & "= " & strValue
+				SetValue = True
+				Exit For
+			End If 
+		Next 
+	End If
+End Function
+'--------------------------------------------
+'  Sub SetOriginalSettings(vSettings)
+'--------------------------------------------
+Sub SetOriginalSettings(ByRef vSettings)
+Dim nInd
+	For nInd = 0 to UBound(vParamNames) - 1
+		Call SetValue(nInd,"Unknown",False)
+	Next
+End Sub 

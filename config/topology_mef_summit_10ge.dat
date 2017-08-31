@@ -1,0 +1,67 @@
+[Description]
+MEFcfgLoader topology version 2.0
+
+[Templates]
+# XLS TEMPLATE won't be used by loader version 01.1 or later
+Exported TCG Templates        = C:\MEF\Configs\MX10003
+
+[Sessions]
+Left Node Session             = MEF_Summit_10G,Node-L1,node-l,iometrix
+Right Node Session            = MEF_Summit_10G,Node-R1,node-r,iometrix
+
+[Settings]
+
+Configuration Files Folder    = C:\MEF\Configs\MX10003
+CONFIGS_GLOBAL                = group-global
+CONFIGS_RE0                   = group-member0
+# CONFIGS_RE1                 = 
+Platform Name                 = mx10003
+Node Name Prefix              = mx
+Left Node IP                  = 10.164.0.15/24
+Right Node IP                 = 10.164.0.17/24
+
+[Node-Left]
+UNI-A=xe-1/0/0:0
+UNI-B=xe-1/0/0:3
+NNI=xe-1/0/1:0
+
+[Node-Right]
+UNI-C = xe-0/0/2:0
+UNI-D = xe-0/0/2:1
+UNI-CC = xe-0/0/2:2
+UNI-DD = xe-0/0/2:3
+NNI = xe-0/0/1:0
+
+[Service]
+E-LAN
+E-Line
+E-Tree
+E-Access
+
+[E-Line]
+epl:1,2,3,4,5
+evpl:1,2,3-2,3-3,3-4,3,4,5,6,7,8
+
+[E-LAN]
+eplan:1,2,3,4,5,6,7,8
+evplan:1,10,2,3-2,3-3,3-4,3,4-1,4-2,4-3,4-4,4,5,6,7,8,9
+
+[E-Tree]
+eptree:1,2,3,4,5,6,7,8
+evptree:1,10,11,2,3,4-1,4-2,4-3,4-4,5-1,5-2,5-3,6,7,8,9
+
+[E-Access]
+aepl:1
+aepl-dei:2
+aepl-pcp:2
+aevpl:1
+aevpl-dei:2
+aevpl-pcp:2
+
+[Default_Values]
+MTU = 9192
+CBS0 = 1500
+CBS = 13312
+
+
+

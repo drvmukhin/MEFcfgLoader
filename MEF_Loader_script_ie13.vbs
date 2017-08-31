@@ -1469,103 +1469,64 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 	nTable1_H = FullTitleH - 2 * LoginTitleH - 2 * nSpace
 	ButtonAlign = "center"
 	CellPadding = 2
+	ColSpan = 2
+	vEvent = Array("","EMPTY","LOAD","DOWNLOAD","APPLY_FWF","CHECK","EDIT","POPULATE_DNLD","POPULATE_ORIG","POPULATE_ONLINE","EMPTY","EMPTY","COPY_CLPBRD_L","COPY_CLPBRD_R")
+	vBText =  Array("","EMPTY",_
+	                  "Load Config",_
+	                  "Save Tested Config",_
+					  "Apply Filter",_
+					  "Check Config",_
+					  "Edit Config", _
+					  "Export Tested to TCG",_
+					  "Export Original to TCG",_
+					  "TCG ON-Line",_
+					  "",_
+					  "Copy Config to Clipboard",_
+					  "LEFT",_
+					  "RIGHT")
+	vOrder = Array(0,2,3,1,4,5,6,10,11,12,13,7,8,9)
 	strLine = strLine &_
-		"<table border=""0"" cellpadding="""& CellPadding &""" cellspacing=""0"" style="" position: absolute; left: 0px; top: " &  LoginTitleH + nSpace & "px;" &_
-		" border-collapse: collapse; border-style: none; border width: 1px; border-color: " & HttpBgColor2 & "; background-color: Transparent" &_
-		"; height: " & nTable1_H & "px; width: " & nTable1_W & "px;"">" & _
-			"<tbody>" & _
-    			"<tr>" &_
-    				"<td colspan=""2"" style=""border-style: None; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & "; font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; '  id='Button2' name='LOAD' onclick=document.all('ButtonHandler').value='LOAD';><u>L</u>oad Config</button>" & _	
-					"</td>"&_
-				"</tr>" &_
-				"<tr>" &_
-					"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & "; font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; '  id='Button3' name='DNLD' onclick=document.all('ButtonHandler').value='DOWNLOAD';><u>S</u>ave Tested Config</button>" & _	
-					"</td>"&_
-				"</tr>" &_
-				"<tr>" &_
-    				"<td  colspan=""2"" style=""border-style: None; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & 2 * LoginTitleH & """ width=""" & nTable1_W & """>" & _
-						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" &  2 * nMenuButtonY & "; font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button1' name='EPTY' onclick=document.all('ButtonHandler').value='EMPTY';></button>" & _	
-					"</td>"&_
-				"</tr>" &_
-				"<tr>" &_
-					"<td  colspan=""2"" style=""border-style: None; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-    					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; '  id='Button4' name='Apply_FWF' AccessKey='E' onclick=document.all('ButtonHandler').value='APPLY_FWF';><u>A</u>pply Filter</button>" & _
-					"</td>"&_
-				"</tr>" &_
-				"<tr>" &_
-    				"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-    					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor4 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button5' name='Check_' AccessKey='E' onclick=document.all('ButtonHandler').value='CHECK';><u>C</u>heck Config</button>" & _
-					"</td>"&_
-				"</tr>" &_
-				"<tr>" &_
-    				"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor4 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px;' id='Button6' name='EDIT' onclick=document.all('ButtonHandler').value='EDIT';><u>E</u>dit Config</button>" & _	
-					"</td>"&_
-				"</tr>" &_
-				"<tr>" &_
-    				"<td  colspan=""2"" style=""border-style: None; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & nTable1_H - 20 * LoginTitleH - 10 * CellPadding & """ >" & _
-						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & nTable1_H - 12 * LoginTitleH - 24 * CellPadding & "; font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button10' name='EMPTY' onclick=document.all('ButtonHandler').value='EMPTY';></button>" & _	
-					"</td>"&_
-				"</tr>" &_				
-				"<tr>" &_
-					"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-     					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button11' name='COPY_CLPBRD' onclick=document.all('ButtonHandler').value='Do Nothing';>Copy to ClipBoarad</button>" & _
-					"</td>"&_
-				"</tr>" &_
-				"<tr>" &_
-					"<td style=""border-style: none; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-    					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX/2 - 2 & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button12' name='COPY_CLPBRD_L' AccessKey='P' onclick=document.all('ButtonHandler').value='COPY_CLPBRD_L';>LEFT</button>" & _
-					"</td>"&_
-					"<td style=""border-style: none; background-color: Transparent;""align=""left"" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-    					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX/2 - 2 & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button13' name='COPY_CLPBRD_R' AccessKey='P' onclick=document.all('ButtonHandler').value='COPY_CLPBRD_R';>RIGHT</button>" & _
-					"</td>"&_
-				"</tr>" &_										
-				"<tr>" &_
-					"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-     					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button7' name='POPULATE_DNLD' onclick=document.all('ButtonHandler').value='POPULATE_DNLD';>TCG <u>E</u>xport Tested</button>" & _
-					"</td>"&_
-				"</tr>" &_
-				"<tr>" &_
-					"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-    					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button8' name='POPULATE_ORIG' AccessKey='P' onclick=document.all('ButtonHandler').value='POPULATE_ORIG';>TCG <u>E</u>xport Original</button>" & _
-					"</td>"&_
-				"</tr>" &_										
-				"<tr>" &_
-					"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-    					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button9' name='POPULATE_ONLINE' AccessKey='P' onclick=document.all('ButtonHandler').value='POPULATE_ONLINE';>TCG <u>O</u>N-Line</button>" & _
-					"</td>"&_
-				"</tr>" &_					
+	"<table border=""0"" cellpadding="""& CellPadding &""" cellspacing=""0"" style="" position: absolute; left: 0px; top: " &  LoginTitleH + nSpace & "px;" &_
+	" border-collapse: collapse; border-style: none; border width: 1px; border-color: " & HttpBgColor2 & "; background-color: Transparent" &_
+	"; height: " & nTable1_H & "px; width: " & nTable1_W & "px;"">" & _
+	"<tbody>" 
+		For i = 1 to 13
+			n = vOrder(i)
+			Select Case n
+				Case 1
+					strLine = strLine & "<tr>" &_
+					MainMenuButton(n, vEvent(n),LoginTitleH,"",nMenuButtonX,2 * LoginTitleH,_
+					HttpBgColor2,HttpTextColor3, ColSpan,ButtonAlign,vBText(n),vEvent(n),n) &_
+					"</tr>"				
+				Case 10
+					strLine = strLine & "<tr>" &_
+					MainMenuButton(n, vEvent(n),LoginTitleH,"",nMenuButtonX,nTable1_H - 12 * LoginTitleH - 24 * CellPadding,_
+					HttpBgColor2,HttpTextColor3, ColSpan,ButtonAlign,vBText(n),vEvent(n),n) &_
+					"</tr>"				
+				Case 11
+					strLine = strLine & "<tr>" &_
+					MainMenuButton(n, vEvent(n),LoginTitleH,nTable1_W,nMenuButtonX,nMenuButtonY,_
+					HttpBgColor2,HttpTextColor3, ColSpan,ButtonAlign,vBText(n),vEvent(n),n) &_
+					"</tr>"
+				Case 12
+					strLine = strLine & "<tr>" &_
+					MainMenuButton(n, vEvent(n),LoginTitleH,nTable1_W/2,nMenuButtonX/2-2,nMenuButtonY,_
+					HttpBgColor2,HttpTextColor3, 1,"right",vBText(n),vEvent(n),n)
+				Case 13
+					strLine = strLine &_
+					MainMenuButton(n, vEvent(n),LoginTitleH,nTable1_W/2,nMenuButtonX/2-2,nMenuButtonY,_
+					HttpBgColor2,HttpTextColor3, 1,"left",vBText(n),vEvent(n),n) &_
+					"</tr>"
+				Case Else
+					strLine = strLine & "<tr>" &_
+					MainMenuButton(n, vEvent(n),LoginTitleH,nTable1_W,nMenuButtonX,nMenuButtonY,_
+					HttpBgColor2,HttpTextColor3, ColSpan,ButtonAlign,vBText(n),vEvent(n),n) &_
+					"</tr>"
+			End Select
+		Next
+	strLine = strLine &	"</tr>" &_					
 			"</tbody></table>" &_
 			"<input name='ButtonHandler' type='hidden' value='Nothing Clicked Yet'>"
-		nButton = 7
     '-----------------------------------------------------------------
 	' SET THE TITLE OF THE  FORM   		
 	'-----------------------------------------------------------------
@@ -4569,4 +4530,22 @@ Dim oExec, oIn, g_objShell,ClipBoardText,objDataFileName
 		Err.clear
 	On Error Goto 0
 End Function
-
+'-------------------------------------------------
+'  Function MainMenuButton()
+'-------------------------------------------------
+Function MainMenuButton(ButtonID, ButtonName,CellHight,CellWidth,ButtonX,ButtonY,BGColor,TXTColor,ColSpan,ButtonAlign,ButtonText,EventID,MousEventID)
+Dim nFontSize_12
+	nFontSize_12 = 12
+	MainMenuButton = "<td colspan=""" & ColSpan & """ style=""border-style: none; background-color: Transparent;""align=""" & ButtonAlign &_
+     	""" class=""oa1"" height=""" & CellHight & """ width=""" & CellWidth & """ >" & _
+		"<button style='font-weight: bold; border-style: None; background-color: " & BGColor & "; color: " & TXTColor & "; width:" &_
+		ButtonX & ";height:" & ButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
+		"px; ' id='Button"& ButtonID &"' name='"& ButtonName &"'" &_ 
+		"onclick=document.all('ButtonHandler').value='"& EventID &"'" 
+		If IsNumeric(MousEventID) Then 
+		    MainMenuButton = MainMenuButton &_
+			" onmouseenter=document.all('ButtonHandler').value='MOUSEIN_" & MousEventID & "';" &_
+			" onmouseleave=document.all('ButtonHandler').value='MOUSEOUT_" & MousEventID & "';"
+		End If 
+		MainMenuButton = MainMenuButton & " >"& ButtonText &"</button>" & "</td>"
+End Function

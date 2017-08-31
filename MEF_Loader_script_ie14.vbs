@@ -23,14 +23,16 @@ Const MAX_TIME_DELTA = 	180
 Const MAX_LEN = 		134
 Const nABC =			2
 Const PARENTS = 		"1"
-Const DEBUG_FILE = "debug-loader"
+Const DEBUG_FILE = "debug-loader-v14"
 Const HideTerminal = 7
 Const ShowTerminal = 1
 
 
 '
 '   Global Array Variables
-Dim vConfigFileLeft,vFilterList, vPolicerList, vCIR, vCBS
+Dim vConfigFileLeft,vFilterList, vPolicerList, vCIR, vCBS, vFilterProfileList
+Dim FltCurrent1, FltCurrent2
+Dim CIRo, PIRo, CBSo, CBSdef, PBSdef, PBSo, MTU
 '
 '   Global Variables
 Dim D0 
@@ -56,7 +58,7 @@ Dim strPID
 Dim vFlavors, vSvc, vNodes(2,5), vTemplates(4), vSettings
 Dim strConfigFileL, strConfigFileR, strVersion
 Dim Platform, DUT_Platform
-Dim VBScript_DNLD_Config, VBScript_Upload_Config, VBScript_FWF_Apply, VBScript_FTP_User, VBScript_Set_Node
+Dim VBScript_DNLD_Config, VBScript_Upload_Config, VBScript_FWF_Apply, VBScript_FTP_User, VBScript_Set_Node, VBScript_BWP_Apply, VBScript_FLT_and_BWP_Apply
 Dim strTempOrigFolder, strTempDestFolder, vXLSheetPrefix(4)
 Dim objXLS, objWrkBk, objXLSeet
 Dim vDelim, vParamNames,vPlatforms, objWMIService, IE_Window_Title
@@ -140,7 +142,7 @@ Set objFSO = CreateObject("Scripting.FileSystemObject")
 Set objEnvar = WScript.CreateObject("WScript.Shell")
 Set objShell = WScript.CreateObject("WScript.Shell")
 nDebugCRT = 0
-nDebug = 1
+nDebug = 0
 ShowLog = False
 CurrentDate = Date()
 CurrentTime = Time()
@@ -409,7 +411,7 @@ Loop
 	End If
 	vSettings(15) = " =" & strCRT_SessionFolder
 	vSettings(16) = " =" & strFTP_Folder
-	strDirectoryTmp = strDirectoryWork
+	strDirectoryTmp = strDirectoryWork & "\temp"
 	strWinUtilsFolder = strDirectoryWork & "\Bin"
 	strCRTexe = """" & strCRT_InstallFolder & strCRTexe
 '--------------------------------------------------------------------------------
@@ -448,6 +450,10 @@ Loop
 			    VBScript_FTP_User = strDirectoryWork & "\" & Split(vLines(nIndex),"=")(1)
 			Case "SETNODE"
 				VBScript_Set_Node = strDirectoryWork & "\" & Split(vLines(nIndex),"=")(1)
+			Case "BWPROFILE"
+			    VBScript_BWP_Apply = Split(vLines(nIndex),"=")(1)
+			Case "FLT_BWP_ROFILE"
+				VBScript_FLT_and_BWP_Apply = Split(vLines(nIndex),"=")(1)
 		End Select
 	Next
 '--------------------------------------------------------------------------------
@@ -533,6 +539,33 @@ Loop
 							vNodes(1,4) = Split(vLines(nInd),"=")(1)
 		End Select
 	Next
+	'
+	'  Read Default UNI/EVC parameters
+	nCount = GetFileLineCountByGroup(strFileParam, vLines,"Default_Values","","",0)
+	If nCount = 0 Then 
+		CBSo = 1500
+		CIRo = 1500		
+		CBSdef = 13698
+		PBSdef = 2 * CBSdef
+		PBSo = CBSdef
+		MTU = 9192
+	Else 
+		For nInd = 0 to nCount - 1
+			Select Case Split(vLines(nInd),"=")(0)
+					Case "CIR0"
+								CIRo = Split(vLines(nInd),"=")(1)
+								PIRo = CIRo
+					Case "CBS0"
+								CBSo = Split(vLines(nInd),"=")(1)
+					Case "MTU"
+								MTU = Split(vLines(nInd),"=")(1)
+					Case "CBS"
+								CBSdef = Split(vLines(nInd),"=")(1)
+								PBSdef = 2 * CBSdef
+								PBSo = CBSdef
+			End Select
+		Next
+    End If		
 '-------------------------------------------------------------------------------------------
 '  		LOAD LIST OF TEST SERIES FROM CONFIGURATIONS.DAT
 '-------------------------------------------------------------------------------------------
@@ -1003,7 +1036,14 @@ End Function
 	Dim strLine, nCount, nSize
 	Dim objDataFileName
     strFileWeekStream = ""	
+	On Error Resume Next
 	Set objDataFileName = objFSO.OpenTextFile(strFileName)
+	if Err.number > 0 then 
+	    MsgBox "File Name: " & strFileName & chr(13) & Err.Description
+		On Error goto 0
+		Exit function
+	End if 
+	On error goto 0
 	nIndex = 0
 	If nDebug = 1 Then objDebug.WriteLine "           GETTING SIZE OF THE FILE FIRST        "
     Do While objDataFileName.AtEndOfStream <> True
@@ -1442,23 +1482,6 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 	g_objIE.Visible = False		
 	IE_Full_AppName = g_objIE.document.Title & " - " & IE_Window_Title
     strLine = ""
-    '-----------------------------------------------------------------
-	' Create Background Table  		
-	'-----------------------------------------------------------------
-'	htmlEmptyCell = _
-'       	"<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(LoginTitleW/6) & """></td>"
-'	nLine = nLine + 2
-'   strLine = strLine &_	
-'		"<table border=""1"" cellpadding=""1"" cellspacing=""1"" height=""" & 4 * LoginTitleH + cellH * (nLine) + nButtonY + nBottom &_
-'		""" width=""" & FullTitleW & """ valign=""middle"" background=""" & bgFigure & """ background-repeat=""no-repeat""" &_ 
-'		"style="" position: absolute; top: 0px; left:0px;" &_
-'		"border-collapse: collapse; border-style: none ; background-color: " & HttpBgColor6 & "'; width: " & LoginTitleW & "px;"">" & _
-'			"<tbody>" &_
-'			    "<tr>"&_
-'					htmlEmptyCell &_
-'				"</tr>" &_
-'				"</tbody>" &_
-'		"</table>"
 	'------------------------------------------------------
 	'   Configuration BUTTON 
 	'------------------------------------------------------
@@ -1469,103 +1492,66 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 	nTable1_H = FullTitleH - 2 * LoginTitleH - 2 * nSpace
 	ButtonAlign = "center"
 	CellPadding = 2
+	ColSpan = 2
+	vEvent = Array("","EMPTY","LOAD","DOWNLOAD","APPLY_FWF","CHECK","EDIT","POPULATE_DNLD","POPULATE_ORIG","POPULATE_ONLINE",_
+	               "EMPTY","EMPTY","COPY_CLPBRD_L","COPY_CLPBRD_R","APPLY_BW_PROFILE")
+	vBText =  Array("","EMPTY",_
+	                  "Load Config",_
+	                  "Save Tested Config",_
+					  "Apply Filter",_
+					  "Check Config",_
+					  "Edit Config", _
+					  "Export Tested to TCG",_
+					  "Export Original to TCG",_
+					  "TCG ON-Line",_
+					  "",_
+					  "Copy Config to Clipboard",_
+					  "LEFT",_
+					  "RIGHT",_
+					  "Apply Bw Profile")
+	vOrder = Array(0,2,3,5,6,1,4,14,10,11,12,13,7,8,9)
 	strLine = strLine &_
-		"<table border=""0"" cellpadding="""& CellPadding &""" cellspacing=""0"" style="" position: absolute; left: 0px; top: " &  LoginTitleH + nSpace & "px;" &_
-		" border-collapse: collapse; border-style: none; border width: 1px; border-color: " & HttpBgColor2 & "; background-color: Transparent" &_
-		"; height: " & nTable1_H & "px; width: " & nTable1_W & "px;"">" & _
-			"<tbody>" & _
-    			"<tr>" &_
-    				"<td colspan=""2"" style=""border-style: None; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & "; font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; '  id='Button2' name='LOAD' onclick=document.all('ButtonHandler').value='LOAD';><u>L</u>oad Config</button>" & _	
-					"</td>"&_
-				"</tr>" &_
-				"<tr>" &_
-					"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & "; font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; '  id='Button3' name='DNLD' onclick=document.all('ButtonHandler').value='DOWNLOAD';><u>S</u>ave Tested Config</button>" & _	
-					"</td>"&_
-				"</tr>" &_
-				"<tr>" &_
-    				"<td  colspan=""2"" style=""border-style: None; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & 2 * LoginTitleH & """ width=""" & nTable1_W & """>" & _
-						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" &  2 * nMenuButtonY & "; font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button1' name='EPTY' onclick=document.all('ButtonHandler').value='EMPTY';></button>" & _	
-					"</td>"&_
-				"</tr>" &_
-				"<tr>" &_
-					"<td  colspan=""2"" style=""border-style: None; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-    					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; '  id='Button4' name='Apply_FWF' AccessKey='E' onclick=document.all('ButtonHandler').value='APPLY_FWF';><u>A</u>pply Filter</button>" & _
-					"</td>"&_
-				"</tr>" &_
-				"<tr>" &_
-    				"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-    					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor4 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button5' name='Check_' AccessKey='E' onclick=document.all('ButtonHandler').value='CHECK';><u>C</u>heck Config</button>" & _
-					"</td>"&_
-				"</tr>" &_
-				"<tr>" &_
-    				"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor4 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px;' id='Button6' name='EDIT' onclick=document.all('ButtonHandler').value='EDIT';><u>E</u>dit Config</button>" & _	
-					"</td>"&_
-				"</tr>" &_
-				"<tr>" &_
-    				"<td  colspan=""2"" style=""border-style: None; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & nTable1_H - 20 * LoginTitleH - 10 * CellPadding & """ >" & _
-						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & nTable1_H - 12 * LoginTitleH - 24 * CellPadding & "; font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button10' name='EMPTY' onclick=document.all('ButtonHandler').value='EMPTY';></button>" & _	
-					"</td>"&_
-				"</tr>" &_				
-				"<tr>" &_
-					"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-     					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button11' name='COPY_CLPBRD' onclick=document.all('ButtonHandler').value='Do Nothing';>Copy to ClipBoarad</button>" & _
-					"</td>"&_
-				"</tr>" &_
-				"<tr>" &_
-					"<td style=""border-style: none; background-color: Transparent;""align=""right"" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-    					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX/2 - 2 & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button12' name='COPY_CLPBRD_L' AccessKey='P' onclick=document.all('ButtonHandler').value='COPY_CLPBRD_L';>LEFT</button>" & _
-					"</td>"&_
-					"<td style=""border-style: none; background-color: Transparent;""align=""left"" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-    					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX/2 - 2 & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button13' name='COPY_CLPBRD_R' AccessKey='P' onclick=document.all('ButtonHandler').value='COPY_CLPBRD_R';>RIGHT</button>" & _
-					"</td>"&_
-				"</tr>" &_										
-				"<tr>" &_
-					"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-     					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button7' name='POPULATE_DNLD' onclick=document.all('ButtonHandler').value='POPULATE_DNLD';>TCG <u>E</u>xport Tested</button>" & _
-					"</td>"&_
-				"</tr>" &_
-				"<tr>" &_
-					"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-    					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button8' name='POPULATE_ORIG' AccessKey='P' onclick=document.all('ButtonHandler').value='POPULATE_ORIG';>TCG <u>E</u>xport Original</button>" & _
-					"</td>"&_
-				"</tr>" &_										
-				"<tr>" &_
-					"<td  colspan=""2"" style=""border-style: none; background-color: Transparent;""align="""& ButtonAlign &""" class=""oa1"" height=""" & LoginTitleH & """ >" & _
-    					"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor2 & "; color: " & HttpTextColor3 & "; width:" &_
-						nMenuButtonX & ";height:" & nMenuButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
-						"px; ' id='Button9' name='POPULATE_ONLINE' AccessKey='P' onclick=document.all('ButtonHandler').value='POPULATE_ONLINE';>TCG <u>O</u>N-Line</button>" & _
-					"</td>"&_
-				"</tr>" &_					
+	"<table border=""0"" cellpadding="""& CellPadding &""" cellspacing=""0"" style="" position: absolute; left: 0px; top: " &  LoginTitleH + nSpace & "px;" &_
+	" border-collapse: collapse; border-style: none; border width: 1px; border-color: " & HttpBgColor2 & "; background-color: Transparent" &_
+	"; height: " & nTable1_H & "px; width: " & nTable1_W & "px;"">" & _
+	"<tbody>" 
+		For i = 1 to 14
+			n = vOrder(i)
+			Select Case n
+				Case 1
+					strLine = strLine & "<tr>" &_
+					MainMenuButton(n, vEvent(n),LoginTitleH,"",nMenuButtonX,2 * LoginTitleH,_
+					HttpBgColor2,HttpTextColor3, ColSpan,ButtonAlign,vBText(n),vEvent(n),n) &_
+					"</tr>"				
+				Case 10
+					strLine = strLine & "<tr>" &_
+					MainMenuButton(n, vEvent(n),LoginTitleH,"",nMenuButtonX,nTable1_H - 13 * LoginTitleH - 26 * CellPadding,_
+					HttpBgColor2,HttpTextColor3, ColSpan,ButtonAlign,vBText(n),vEvent(n),n) &_
+					"</tr>"				
+				Case 11
+					strLine = strLine & "<tr>" &_
+					MainMenuButton(n, vEvent(n),LoginTitleH,nTable1_W,nMenuButtonX,nMenuButtonY,_
+					HttpBgColor2,HttpTextColor3, ColSpan,ButtonAlign,vBText(n),vEvent(n),n) &_
+					"</tr>"
+				Case 12
+					strLine = strLine & "<tr>" &_
+					MainMenuButton(n, vEvent(n),LoginTitleH,nTable1_W/2,nMenuButtonX/2-2,nMenuButtonY,_
+					HttpBgColor2,HttpTextColor3, 1,"right",vBText(n),vEvent(n),n)
+				Case 13
+					strLine = strLine &_
+					MainMenuButton(n, vEvent(n),LoginTitleH,nTable1_W/2,nMenuButtonX/2-2,nMenuButtonY,_
+					HttpBgColor2,HttpTextColor3, 1,"left",vBText(n),vEvent(n),n) &_
+					"</tr>"
+				Case Else
+					strLine = strLine & "<tr>" &_
+					MainMenuButton(n, vEvent(n),LoginTitleH,nTable1_W,nMenuButtonX,nMenuButtonY,_
+					HttpBgColor2,HttpTextColor3, ColSpan,ButtonAlign,vBText(n),vEvent(n),n) &_
+					"</tr>"
+			End Select
+		Next
+	strLine = strLine &	"</tr>" &_					
 			"</tbody></table>" &_
 			"<input name='ButtonHandler' type='hidden' value='Nothing Clicked Yet'>"
-		nButton = 7
     '-----------------------------------------------------------------
 	' SET THE TITLE OF THE  FORM   		
 	'-----------------------------------------------------------------
@@ -1700,20 +1686,41 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 	'-----------------------------------------------------
 	'  SELECT BW PROFILE FILTER
 	'-----------------------------------------------------
-
+	strLine = strLine  &_					
+			"<input name='BW_Param_1' type='hidden' value='Fake param with 0 index'>" &_
+			"<input name='BW_Param_2' type='hidden' value='Fake param with 0 index'>"
 		strTitleCell = "<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(nTable2_W/5) & """>" & _
 						"<p style=""text-align: center; font-size: " & nFontSize_10 & ".0pt; font-family: 'Helvetica'; color: " & HttpTextColor2 &_
 						";font-weight: normal;font-style: normal;"">"
-		strInputCell_1 = "<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(nTable2_W/5) & """ align=""center"">" &_									
-						"<input name=BW_Param_1 value='' style=""text-align: center; font-size: " & nFontSize_10 & ".0pt;" &_ 
-						" border-style: none; font-family: 'Helvetica'; color: " & HttpTextColor2 &_
-					    "; background-color: transparent; font-weight: Normal;"" AccessKey=i size=12 maxlength=15 " &_
-						"type=text > "
-		strInputCell_2 = "<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(nTable2_W/5) & """ align=""center"">" &_									
-						"<input name=BW_Param_2 value='' style=""text-align: center; font-size: " & nFontSize_10 & ".0pt;" &_ 
-						" border-style: none; font-family: 'Helvetica'; color: " & HttpTextColor2 &_
-					    "; background-color: transparent; font-weight: Normal;"" AccessKey=i size=12 maxlength=15 " &_
-						"type=text > "
+		strInputCell_1_1 = "<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(nTable2_W/5) & """ align=""center"">" &_
+							"<table style=""background-color:transparent;border-color:transparent;border-style: None;""><tbody><tr><td>" &_
+								"<input name=BW_Param_1 value='' style=""text-align: center; font-size: " & nFontSize_10 & ".0pt;" &_ 
+								" border-style: none; font-family: 'Helvetica'; color: " & HttpTextColor2 & ";" &_
+								"background-color: transparent; font-weight: Normal;"" AccessKey=i size=6 maxlength=8 " &_
+								"type=text >" &_ 
+							"</td><td>" &_
+								"<p style=""color: " & HttpTextColor2 & "; "">/</p>" &_
+							"</td><td>" &_
+								"<input name=BW_Param_1 value='' style=""text-align: center; font-size: " & nFontSize_10 & ".0pt;" &_ 
+								" border-style: none; font-family: 'Helvetica'; color: " & HttpTextColor2 & ";" &_
+								"background-color: transparent; font-weight: Normal;"" AccessKey=i size=6 maxlength=8 " &_
+								"type=text >" &_
+							"</td></tr></tbody></table>"							
+											
+		strInputCell_2_1 = "<td style="" border-style: None;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(nTable2_W/5) & """ align=""center"">" &_
+							"<table style=""background-color:transparent;border-color:transparent;border-style: None;""><tbody><tr><td>" &_
+								"<input name=BW_Param_2 value='' style=""text-align: center; font-size: " & nFontSize_10 & ".0pt;" &_ 
+								" border-style: none; font-family: 'Helvetica'; color: " & HttpTextColor2 & ";" &_
+								"background-color: transparent; font-weight: Normal;"" AccessKey=i size=6 maxlength=8 " &_
+								"type=text >" &_ 
+							"</td><td>" &_
+								"<p style=""color: " & HttpTextColor2 & "; "">/</p>" &_
+							"</td><td>" &_
+								"<input name=BW_Param_2 value='' style=""text-align: center; font-size: " & nFontSize_10 & ".0pt;" &_ 
+								" border-style: none; font-family: 'Helvetica'; color: " & HttpTextColor2 & ";" &_
+								"background-color: transparent; font-weight: Normal;"" AccessKey=i size=6 maxlength=8 " &_
+								"type=text >" &_
+							"</td></tr></tbody></table>"							
 
 		strLine = strLine &_
 			"<table border=""0"" cellpadding=""0"" cellspacing=""0""" &_ 
@@ -1739,22 +1746,38 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 					 strTitleCell & "</p></td>"&_
 					 strTitleCell & "</p></td>"&_
 					 strTitleCell & "</p></td>"&_
-					 strTitleCell & "</p></td>"&_
+					 strTitleCell &_
+							"</p><table align=""center"" width=""" & Int(nTable2_W/7) & " style=""background-color:transparent;border-color:transparent;border-style: None;""><tbody><tr><td>" &_
+								"<p style=""font-size: 10.0pt; color: " & HttpTextColor2 & "; "">Use Defaults Only</p>" &_
+							"</td><td width=""20"">" &_
+								"<input type=checkbox name='DefBWprofile' id='DefBWprofile' style=""color: " & HttpTextColor2 & ";""" & _
+								"onclick=document.all('ButtonHandler').value='SET_DEF_BW_PROFILE';" &_
+								"value='Original'>" &_
+							"</td></tr></tbody></table>" &_					 
+					 "</td>"&_
 					 strTitleCell & "A1 A2 B1 C1 B2 C2</p></td>"&_					 
 				"</tr>" &_
 				"<tr>" &_
 					"<td style="" border-style: None;"" align=""left"" class=""oa2"" height=""" & cellH & """ width=""" & Int(nTable2_W/5) & """>" &_
 						"<select name='bw_profile_1' id='bw_profile_1'" &_
-						"style=""border: none ; outline: none; text-align: right; font-size: " & nFontSize_10 & ".0pt;" &_ 
+						"style="" width: " & Int(nTable2_W/7) & "; border: none ; outline: none; text-align: right; font-size: " & nFontSize_10 & ".0pt;" &_ 
 						";position: relative; left:" & nTab & "px; " &_
 						"font-family: 'Helvetica'; color: " & HttpTextColor2 &_
 						"; background-color: " & HttpBgColor4 & "; font-weight: Normal;"" size='1'" & _
 						" onchange=document.all('ButtonHandler').value='CH_FWF_1' type=text > " &_
 						"</select>" &_
 					"</td>"	&_
-					strInputCell_1 & "</td>" &_
-					strInputCell_1 & "</td>" &_
-					strInputCell_1 & "</td>" &_
+					"<td>" &_
+						"<select name='Policer_BW_Param_1' id='Policer_BW_Param_1'" &_
+						"style=""width: " & Int(nTable2_W/7) & ";border: none ; outline: none; text-align: right; font-size: " & nFontSize_10 & ".0pt;" &_ 
+						";position: relative; left:" & nTab & "px; " &_
+						"font-family: 'Helvetica'; color: " & HttpTextColor2 &_
+						"; background-color: " & HttpBgColor4 & "; font-weight: Normal;"" size='1'" & _
+						" onchange=document.all('ButtonHandler').value='CH_POLICER_1' type=text > " &_
+						"</select>" &_
+					"</td>" &_
+					strInputCell_1_1 & "</td>" &_
+					strInputCell_1_1 & "</td>" &_
 					"<td align=""middle"">" & Flt_Radio(0,0) & Flt_Radio(0,1) & Flt_Radio(1,0) & Flt_Radio(1,1) & Flt_Radio(1,2) & Flt_Radio(1,3) & "</td>" &_
 				"</tr>" &_
 				"<tr>" &_
@@ -1763,16 +1786,24 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 				"<tr>" &_
 					"<td style="" border-style: None;"" align=""left"" class=""oa2"" height=""" & cellH & """ width=""" & Int(nTable2_W/5) & """>" &_
 						"<select name='bw_profile_2' id='bw_profile_2'" &_
-						"style=""border: none; outline: none; text-align: right; font-size: " & nFontSize_10 & ".0pt;" &_ 
+						"style=""width: " & Int(nTable2_W/7) & ";border: none; outline: none; text-align: right; font-size: " & nFontSize_10 & ".0pt;" &_ 
 						";position: relative; left:" & nTab & "px; " &_
 						"font-family: 'Helvetica'; color: " & HttpTextColor2 &_
 						"; background-color: " & HttpBgColor4 & "; font-weight: Normal;"" size='1'" & _
 						" onchange=document.all('ButtonHandler').value='CH_FWF_2' type=text > " &_
 						"</select>" &_
 					"</td>"	&_
-					strInputCell_2 & "</td>" &_
-					strInputCell_2 & "</td>" &_
-					strInputCell_2 & "</td>" &_				
+					"<td>" &_
+						"<select name='Policer_BW_Param_2' id='Policer_BW_Param_2'" &_
+						"style=""width: " & Int(nTable2_W/7) & ";border: none ; outline: none; text-align: right; font-size: " & nFontSize_10 & ".0pt;" &_ 
+						";position: relative; left:" & nTab & "px; " &_
+						"font-family: 'Helvetica'; color: " & HttpTextColor2 &_
+						"; background-color: " & HttpBgColor4 & "; font-weight: Normal;"" size='1'" & _
+						" onchange=document.all('ButtonHandler').value='CH_POLICER_2' type=text > " &_
+						"</select>" &_
+					"</td>" &_
+					strInputCell_2_1 & "</td>" &_
+					strInputCell_2_1 & "</td>" &_				
 					"<td align=""middle"">" & Flt_Radio(0,0) & Flt_Radio(0,1) & Flt_Radio(1,0) & Flt_Radio(1,1) & Flt_Radio(1,2) & Flt_Radio(1,3) & "</td>" &_
 				"</tr>" &_	
 				"<tr>" &_
@@ -1794,12 +1825,35 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
     BackgroundDivH = FullTitleH - 3 * LoginTitleH - 5 * nSpace	- nLine * cellH
     htmlEmptyCell = _
         	"<td style="" border-color: transparent; border-style: none;"" class=""oa2"" height=""" & cellH & """ width=""" & Int(DiagramW/6) & """></td>"
-
+    
 	strLine = strLine &_	
 	 "<div id='divDiagram' name='divDiagram' style='color: " & HttpTextColor3 & " ;background-color: " & HttpBgColor2 & "; " &_ 
 	 "width: " & nTable2_W - 4 & "px; height: " & BackgroundDivH & "px;" &_
 	 "border-style: none; border-color: transparent; " &_	 
 	 "position: absolute; top: " & 2 * LoginTitleH + nLine * cellH + 4 * nSpace & "px; left: " & Int(LoginTitleW/4) + 2 &"px; '>" &_
+		"<table border=""0"" cellpadding=""1"" cellspacing=""1"" height=""" & 5 * cellH & """ width=""" & Int(nTable2_W/5) & """ valign=""middle""" &_ 
+		"style=""position: relative; top: 0px; left: " & Int(2*nTable2_W/5) & "px;" &_
+		"border-collapse: collapse; border-color: transparent; border-style: none; background-color: transparent "">" & _
+			"<tbody>" &_
+					"<tr height=""" & cellH & """ ><td colspan=""2"" align=""left"" style=""font-size: 10.0pt; color: " & HttpTextColor2 & ";""><u>Default values:</u></td></tr>" &_
+					"<tr height=""" & cellH & """ >" &_
+						"<td align=""left"" style=""font-size: 9.0pt;color: " & HttpTextColor2 & ";"">MTU:</td>" &_
+						"<td align=""left"" style=""font-size: 9.0pt;color: " & HttpTextColor3 & ";"">" & MTU & " bytes</td>" &_
+					"</tr>" &_
+					"<tr height=""" & cellH & """ >" &_
+						"<td align=""left"" style=""font-size: 9.0pt;color: " & HttpTextColor2 & ";"">CBS(min):</td>" &_
+						"<td align=""left"" style=""font-size: 9.0pt;color: " & HttpTextColor3 & ";"">" & CBSo & " bytes</td>" &_
+					"</tr>" &_
+					"<tr height=""" & cellH & """ >" &_
+						"<td align=""left"" style=""font-size: 9.0pt;color: " & HttpTextColor2 & ";"">CBS:</td>" &_
+						"<td align=""left"" style=""font-size: 9.0pt;color: " & HttpTextColor3 & ";"">" & CBSdef & " bytes</td>" &_
+					"</tr>" &_
+					"<tr height=""" & cellH & """ >" &_
+						"<td align=""left"" style=""font-size: 9.0pt;color: " & HttpTextColor2 & ";"">PBS:</td>" &_
+						"<td align=""left"" style=""font-size: 9.0pt;color: " & HttpTextColor3 & ";"">" & PBSdef & " bytes</td>" &_
+					"</tr>" &_					
+			"</tbody>" &_
+		"</table>" &_
 	 "</div>"
 	
 	strLine = strLine &_	
@@ -1812,12 +1866,10 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
    strLine = strLine &_	
 	 "<div id='divDiagram' name='divInterfaces' style='color: " & HttpTextColor3 & " ;background-color: transparent; " &_ 
 	 "width: " & DiagramW & "px; height: " & DiagramH & "px;" &_
-	 "position: absolute; bottom: " & 3 * LoginTitleH & "px; left: " & Int(3 * LoginTitleW/8) & "px; '>" 
-
-   strLine = strLine &_
+	 "position: absolute; bottom: " & 3 * LoginTitleH & "px; left: " & Int(3 * LoginTitleW/8) & "px; '>" &_ 
 		"<table border=""0"" cellpadding=""1"" cellspacing=""1"" height=""" & 9 * cellH & """ width=""" & Int(DiagramW) & """ valign=""middle""" &_ 
 		"style="" position: relative; top: 0px; left: 0px;" &_
-		"border-collapse: collapse; border-style: none ; background-color: " & HttpBgColor6 & "'; width: " & DiagramW & "px;"">" & _
+		"border-collapse: collapse; border-style: none ; background-color: transparent;"">" & _
 			"<tbody>" &_
 			    "<tr>"&_
 					htmlEmptyCell & htmlEmptyCell & htmlEmptyCell & UNI_CELL(1,0,"R") & _
@@ -1873,7 +1925,7 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 						"<input name=Current_config value='' style=""text-align: left; font-size: " & nFontSize_12 & ".0pt;" &_ 
 						" border-style: none; font-family: 'Helvetica'; font-style: italic; color: " & HttpTextColor3 &_
 					    "; background-color: Transparent; font-weight: Normal;"" AccessKey=i size=30 maxlength=48 " &_
-						"type=text > " &_
+						"type=text disabled > " &_
 					"</td>" & _
 					"<td style=""border-style: None; background-color: " & HttpBgColor5 & ";""align=""right"" class=""oa1"" height=""" & LoginTitleH & """ width=""" & Int(LoginTitleW/4) & """>" & _
 						"<button style='font-weight: bold; border-style: None; background-color: " & HttpBgColor5 & "; color: " & HttpTextColor3 & "; width:" &_
@@ -1899,11 +1951,15 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 	YES_NO = False
 	CurrentSvc = "Null"
 	nService = vSessionTmp(0)
-	For i=0 to 2 
+	For i=0 to 4 
 		g_objIE.Document.All("BW_Param_1")(i).Value = "N/A"
+        g_objIE.Document.All("BW_Param_2")(i).Value = "N/A"		
 	Next
-    
-	For i = 1 to 13
+    Call DisableBWParams(g_objIE, "BW_Param_1", True)	
+    Call DisableBWParams(g_objIE, "BW_Param_2", True)	    
+	'
+	'  Menu Button Style: Radius
+	For i = 1 to 14
 		Select Case i 
 			Case 1,10
 				'g_objIE.document.getElementById("Button"&i).style.backgroundColor = "#101010"
@@ -1911,6 +1967,7 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 				g_objIE.document.getElementById("Button"&i).style.opacity = 0
 			Case 11
 			   g_objIE.document.getElementById("Button"&i).style.borderRadius = "25px 25px 0px 0px "
+			   g_objIE.document.getElementById("Button"&i).Disabled = True			   
 			Case 12
 			   g_objIE.document.getElementById("Button"&i).style.borderRadius = "0px 0px 0px 25px "
 			Case 13
@@ -1976,14 +2033,21 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 	nFlavor = vSessionTmp(1)
 	nTaskInd = vSessionTmp(2)
 	nTask = Split(vFlavors(nService,nFlavor,1),",")(nTaskInd)
+    FltCurrent1 = 0
+	FltCurrent2 = 0		
+	'
+	'  Temporary code for debug purposes
+    CurrentSvc = nService
+	CurrentFlv = nFlavor 
+	CurrentTsk = nTask 	
 	'--------------------------------------
 	' BW PROFILE LIST
 	'--------------------------------------
 	strConfigFileL = vFlavors(nService, nFlavor,0) & "-" & nTask & "-" & Platform & "-l.conf"
 	strConfigFileL = SourceFolder & "\" & vSvc(nService,1) & "\" & strConfigFileL
     Call GetFileLineCountSelect(strConfigFileL,vConfigFileLeft,"","","",0)
-	Call LoadBwProfiles(g_objIE, "bw_profile_1", "BW_Param_1")
-	Call LoadBwProfiles(g_objIE, "bw_profile_2", "BW_Param_2")	
+	Call LoadBwProfiles_New(g_objIE, "bw_profile_1", "BW_Param_1",FltCurrent1)
+	Call LoadBwProfiles_New(g_objIE, "bw_profile_2", "BW_Param_2",FltCurrent2)	
 	'----------------------------------------------------
 	'  GET MAIN FORM PID
 	'----------------------------------------------------
@@ -2029,7 +2093,10 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 							SourceFolder = strDirectoryConfig
 							Arg4 = "original"
 						end if
-						g_objIE.Document.All("ButtonHandler").Value = "Nothing is selected"
+						'
+						'   Uncheck box for default values
+						If g_objIE.Document.All("ConfigLocation").Checked Then g_objIE.Document.All("DefBWprofile").checked = False
+						g_objIE.Document.All("ButtonHandler").Value = "CHECK"
 			Case "Select_0"
 			           g_objIE.Document.All("ButtonHandler").Value = "None"
 			            Do
@@ -2084,14 +2151,11 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 								End If
 							Next
 							g_objIE.document.getElementById("Input_Param_2").selectedIndex = 0
+							FltCurrent1 = 0
+							FltCurrent2 = 0
 							'--------------------------------------
 							' LOAD BW PROFILES
 							'--------------------------------------
-							strConfigFileL = vFlavors(nService, nFlavor,0) & "-" & nTask & "-" & Platform & "-l.conf"
-							strConfigFileL = SourceFolder & "\" & vSvc(nService,1) & "\" & strConfigFileL
-							Call GetFileLineCountSelect(strConfigFileL,vConfigFileLeft,"","","",0)
-							Call LoadBwProfiles(g_objIE, "bw_profile_1", "BW_Param_1")
-							Call LoadBwProfiles(g_objIE, "bw_profile_2", "BW_Param_2")	
 							g_objIE.Document.All("ButtonHandler").Value = "CHECK"
 							Exit Do
 						Loop       
@@ -2127,6 +2191,8 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 							nFlavor = nNewFlavor
 							nTaskInd = nNewTaskInd
 							nTask = nNewTask
+							FltCurrent1 = 0
+							FltCurrent2 = 0							
 							'--------------------------------------
 							' LOAD INITAIAL TASK LIST
 							'--------------------------------------
@@ -2141,11 +2207,6 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 							'--------------------------------------
 							' LOAD BW PROFILES
 							'--------------------------------------
-							strConfigFileL = vFlavors(nService, nFlavor,0) & "-" & nTask & "-" & Platform & "-l.conf"
-							strConfigFileL = SourceFolder & "\" & vSvc(nService,1) & "\" & strConfigFileL
-							Call GetFileLineCountSelect(strConfigFileL,vConfigFileLeft,"","","",0)
-							Call LoadBwProfiles(g_objIE, "bw_profile_1", "BW_Param_1")
-							Call LoadBwProfiles(g_objIE, "bw_profile_2", "BW_Param_2")	
 							g_objIE.Document.All("ButtonHandler").Value = "CHECK"
 							Exit Do
 						Loop
@@ -2186,32 +2247,39 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 							nFlavor = nNewFlavor
 							nTaskInd = nNewTaskInd
 							nTask = nNewTask
+							FltCurrent1 = 0
+							FltCurrent2 = 0
 							'--------------------------------------
 							' LOAD BW PROFILES
 							'--------------------------------------
-							strConfigFileL = vFlavors(nService, nFlavor,0) & "-" & nTask & "-" & Platform & "-l.conf"
-							strConfigFileL = SourceFolder & "\" & vSvc(nService,1) & "\" & strConfigFileL
-							Call GetFileLineCountSelect(strConfigFileL,vConfigFileLeft,"","","",0)
-							Call LoadBwProfiles(g_objIE, "bw_profile_1", "BW_Param_1")
-							Call LoadBwProfiles(g_objIE, "bw_profile_2", "BW_Param_2")	
 							g_objIE.Document.All("ButtonHandler").Value = "CHECK"
 						    Exit Do
 						Loop
 			Case "CH_FWF_1"
-			            Call SelectBwProfiles(g_objIE, "bw_profile_1", "BW_Param_1")
-'						nFilter = g_objIE.document.getElementById("bw_profile_1").selectedIndex
-'						If LTrim(g_objIE.document.getElementById("bw_profile_1").Options(nFilter).Text) = "" Then g_objIE.document.getElementById("bw_profile_1").selectedIndex = 0 : nFilter = 0 : End If
-					'	nTaskInd = g_objIE.document.getElementById("Input_Param_2").selectedIndex
-						'--------------------------------------
-						' LOAD BW PROFILES
-						'--------------------------------------
-'						If vPolicerList(nFilter) <> "" Then g_objIE.Document.All("BW_Param_1")(0).Value = vPolicerList(nFilter) Else g_objIE.Document.All("BW_Param_1")(0).Value = "N/A" End If
-'						If vCIR(nFilter) <> "" Then g_objIE.Document.All("BW_Param_1")(1).Value = vCIR(nFilter) Else g_objIE.Document.All("BW_Param_1")(1).Value = "N/A" End If
-'						If vCBS(nFilter) <> "" Then g_objIE.Document.All("BW_Param_1")(2).Value = vCBS(nFilter) Else g_objIE.Document.All("BW_Param_1")(2).Value = "N/A" End If	
+			            FltCurrent1 = g_objIE.document.getElementById("bw_profile_1").selectedIndex
+			            Call SelectBwProfiles_New(g_objIE, "bw_profile_1", "BW_Param_1",FltCurrent1)
 						g_objIE.Document.All("ButtonHandler").Value = "None"
+						Call EnableBwProfiles(g_objIE)
 			Case "CH_FWF_2"
-			            Call SelectBwProfiles(g_objIE, "bw_profile_2", "BW_Param_2")
+						FltCurrent2 = g_objIE.document.getElementById("bw_profile_2").selectedIndex			
+			            Call SelectBwProfiles_New(g_objIE, "bw_profile_2", "BW_Param_2",FltCurrent2 )
 						g_objIE.Document.All("ButtonHandler").Value = "None"
+						Call EnableBwProfiles(g_objIE)	
+            Case "CH_POLICER_1"
+						Call SelectPolicer_New(g_objIE, "BW_Param_1")
+						g_objIE.Document.All("ButtonHandler").Value = "None"
+						Call EnableBwProfiles(g_objIE)	
+            Case "CH_POLICER_2"			
+						Call SelectPolicer_New(g_objIE, "BW_Param_2")
+						g_objIE.Document.All("ButtonHandler").Value = "None"
+						Call EnableBwProfiles(g_objIE)				
+			Case "SET_DEF_BW_PROFILE"
+						FltCurrent1 = g_objIE.document.getElementById("bw_profile_1").selectedIndex
+						FltCurrent2 = g_objIE.document.getElementById("bw_profile_2").selectedIndex			
+			            Call SelectBwProfiles_New(g_objIE, "bw_profile_1", "BW_Param_1",FltCurrent1)
+			            Call SelectBwProfiles_New(g_objIE, "bw_profile_2", "BW_Param_2",FltCurrent2)						
+						g_objIE.Document.All("ButtonHandler").Value = "None"
+						Call EnableBwProfiles(g_objIE)
 			Case "APPLY_FWF"
 			            g_objIE.Document.All("ButtonHandler").Value = "None"
 						Do
@@ -2231,7 +2299,7 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 							nTask = g_objIE.document.getElementById("Input_Param_2").options(nTaskInd).text
 							Call TrDebug ("IE_PromptForInput: Current Config: " & CurrentSvc & " " & CurrentFlv & " " & CurrentTsk, "", objDebug, MAX_LEN, 1, 1)						
 							Call TrDebug ("IE_PromptForInput: Applyng Config: " & nService & " " & nFlavor & " " & nTask, "", objDebug, MAX_LEN, 1, 1)						
-							If nService <> CurrentSvc or nFlavor <> CurrentFlv or nTask <> CurrentTsk Then 
+							If CStr(nService) <> CStr(CurrentSvc) or CStr(nFlavor) <> CStr(CurrentFlv) or CStr(nTask) <> CStr(CurrentTsk) Then 
 								vvMsg(0,0) = "CAN'T APPLY FW FILTER:" 		: vvMsg(0,1) = "bold" 	: vvMsg(0,2) =  HttpTextColor2
 								vvMsg(1,0) = "LOAD CONFIGURATION FIRST!"    : vvMsg(1,1) = "bold" 	: vvMsg(1,2) =  HttpTextColor1
 								Call IE_MSG (vIE_Scale, "Applying BW Profile?", vvMsg, 2, g_objIE)
@@ -2240,25 +2308,112 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 							'---------------------------------------------------------
 							' RUN TELNET SCRIPT
 							'---------------------------------------------------------
-							strFilter = ApplyFilterList(g_objIE)
+							strFilter = ApplyFilterList(g_objIE, FltCurrent1, FltCurrent2)
 							If strFilter = "" Then 
 								vvMsg(0,0) = "There is no Filters to apply:" 		: vvMsg(0,1) = "bold" 	: vvMsg(0,2) =  HttpTextColor2
 								vvMsg(1,0) = "Exit..."							    : vvMsg(1,1) = "bold" 	: vvMsg(1,2) =  HttpTextColor1
 								Call IE_MSG (vIE_Scale, "Applying BW Profile?", vvMsg, 2, g_objIE)
 								Exit Do
 							End If
-							Call WriteStrToFile(strDirectoryWork & "\appl_filter.txt",strCRTexe & strFilter & _
-								" /ARG -S /ARG " & strFileSettings &_
-								" /ARG -D /ARG " & strDirectoryWork &_									
-								" /SCRIPT " & strDirectoryWork & "\" & VBScript_FWF_Apply, 1, 4, 0)		
+							If g_objIE.Document.All("DefBWprofile").checked Then 
+								strFilter = strFilter & ApplyBwProfile_All(g_objIE)
+								Call WriteStrToFile(strDirectoryWork & "\appl_filter.txt",strCRTexe & strFilter & _
+									" /ARG S /ARG " & strFileSettings &_
+									" /ARG D /ARG " & strDirectoryWork &_									
+									" /SCRIPT " & strDirectoryWork & "\" & VBScript_FLT_and_BWP_Apply, 1, 4, 0)		
+								g_objShell.run strCRTexe & strFilter & _
+									" /ARG S /ARG " & strFileSettings &_
+									" /ARG D /ARG " & strDirectoryWork &_									
+									" /SCRIPT " & strDirectoryWork & "\" & VBScript_FLT_and_BWP_Apply,nWindowState
+									Call TrDebug ("IE_PromptForInput: " & strCRTexe, "", objDebug, MAX_LEN, 1, 1)						
+									Call TrDebug ("IE_PromptForInput: " & strFilter, "", objDebug, MAX_LEN, 1, 1)						
+								Call TrDebug ("IE_PromptForInput: " & " /SCRIPT " & strDirectoryWork & "\" & VBScript_FLT_and_BWP_Apply, "",objDebug, MAX_LEN, 1, 1)						
+								Exit Do
+								
+							End If ' VBScript_FLT_and_BWP_Apply
 
+							Call WriteStrToFile(strDirectoryWork & "\appl_filter.txt",strCRTexe & strFilter & _
+								" /ARG S /ARG " & strFileSettings &_
+								" /ARG D /ARG " & strDirectoryWork &_									
+								" /SCRIPT " & strDirectoryWork & "\" & VBScript_FWF_Apply, 1, 4, 0)		
+							
 							g_objShell.run strCRTexe & strFilter & _
 								" /ARG S /ARG " & strFileSettings &_
 								" /ARG D /ARG " & strDirectoryWork &_									
 								" /SCRIPT " & strDirectoryWork & "\" & VBScript_FWF_Apply,nWindowState
-                                Call TrDebug ("IE_PromptForInput: " & strCRTexe, "", objDebug, MAX_LEN, 1, 1)						
+								Call TrDebug ("IE_PromptForInput: " & strCRTexe, "", objDebug, MAX_LEN, 1, 1)						
 								Call TrDebug ("IE_PromptForInput: " & strFilter, "", objDebug, MAX_LEN, 1, 1)						
 							Call TrDebug ("IE_PromptForInput: " & " /SCRIPT " & strDirectoryWork & "\" & VBScript_FWF_Apply, "",objDebug, MAX_LEN, 1, 1)						
+							Exit Do
+						Loop
+			
+			Case "APPLY_BW_PROFILE"
+			            g_objIE.Document.All("ButtonHandler").Value = "None"
+						Do
+				            If Not SecureCRT_Installed Then 
+							   Exit Do
+    						End If 
+							'
+							'  Exit if filters are disabled for this configuration
+							If g_objIE.document.getElementById("bw_profile_1").Disabled and g_objIE.document.getElementById("bw_profile_2").Disabled Then 
+								vvMsg(0,0) = "CAN'T APPLY BW PROFILE: " 		: vvMsg(0,1) = "bold" 	: vvMsg(0,2) =  HttpTextColor2
+								vvMsg(1,0) = "ACTION IS NOT AVAILABLE"    : vvMsg(1,1) = "bold" 	: vvMsg(1,2) =  HttpTextColor1
+								vvMsg(2,0) = "FOR THIS TEST CONFIGURATION"    : vvMsg(2,1) = "bold" 	: vvMsg(2,2) =  HttpTextColor1
+								Call IE_MSG(vIE_Scale, "Applying BW Profile?",vvMsg, 3, g_objIE)
+					    		Exit Do
+							End If
+'							If (Not g_objIE.document.getElementById("bw_profile_1").Disabled and g_objIE.document.getElementById("bw_profile_1").Value <> FltCurrent1) or _
+'							   (Not g_objIE.document.getElementById("bw_profile_2").Disabled and g_objIE.document.getElementById("bw_profile_2").Value <> FltCurrent2) Then 
+'								vvMsg(0,0) = "CAN'T APPLY FW FILTER: "	: vvMsg(0,1) = "bold" 	: vvMsg(0,2) =  HttpTextColor2
+'								vvMsg(1,0) = "APPLY FW FILTER FIRST"    : vvMsg(1,1) = "bold" 	: vvMsg(1,2) =  HttpTextColor1
+'								vvMsg(2,0) = ""                         : vvMsg(2,1) = "bold" 	: vvMsg(2,2) =  HttpTextColor1
+'								Call IE_MSG(vIE_Scale, "Applying BW Profile?",vvMsg, 3, g_objIE)
+'					    		Exit Do
+'							End If 
+							
+							nService = g_objIE.document.getElementById("Input_Param_0").selectedIndex
+							nFlavor = g_objIE.document.getElementById("Input_Param_1").selectedIndex
+							nTaskInd = g_objIE.document.getElementById("Input_Param_2").selectedIndex
+							nTask = g_objIE.document.getElementById("Input_Param_2").options(nTaskInd).text
+							Call TrDebug ("IE_PromptForInput: Current Config: " & CurrentSvc & " " & CurrentFlv & " " & CurrentTsk, "", objDebug, MAX_LEN, 1, 1)						
+							Call TrDebug ("IE_PromptForInput: Applyng Config: " & nService & " " & nFlavor & " " & nTask, "", objDebug, MAX_LEN, 1, 1)						
+							If CStr(nService) <> CStr(CurrentSvc) or CStr(nFlavor) <> CStr(CurrentFlv) or CStr(nTask) <> CStr(CurrentTsk) Then 
+								vvMsg(0,0) = "CAN'T APPLY FW FILTER:" 		: vvMsg(0,1) = "bold" 	: vvMsg(0,2) =  HttpTextColor2
+								vvMsg(1,0) = "LOAD CONFIGURATION FIRST!"    : vvMsg(1,1) = "bold" 	: vvMsg(1,2) =  HttpTextColor1
+								Call IE_MSG (vIE_Scale, "Applying BW Profile?", vvMsg, 2, g_objIE)
+								Exit Do
+							End If
+							'
+							'   Validate values entered under BW profile: CIR/PIR CBS/EBS
+							If Not ValidateBWProfile(g_objIE) Then 
+								vvMsg(0,0) = "CAN'T APPLY BW PROFILE:" 		: vvMsg(0,1) = "bold" 	: vvMsg(0,2) =  HttpTextColor2
+								vvMsg(1,0) = "CHECK VALUES USED FOR CIR/PIR CBS/EBS"    : vvMsg(1,1) = "bold" 	: vvMsg(1,2) =  HttpTextColor1
+								Call IE_MSG (vIE_Scale, "Applying BW Profile?", vvMsg, 2, g_objIE)
+								Exit Do
+							End If 
+							'---------------------------------------------------------
+							' RUN TELNET SCRIPT
+							'---------------------------------------------------------
+							strFilter = ApplyBwProfile(g_objIE)
+							If strFilter = "" Then 
+								vvMsg(0,0) = "There is no BW Profile to apply:" 		: vvMsg(0,1) = "bold" 	: vvMsg(0,2) =  HttpTextColor2
+								vvMsg(1,0) = "Exit..."							    : vvMsg(1,1) = "bold" 	: vvMsg(1,2) =  HttpTextColor1
+								Call IE_MSG (vIE_Scale, "Applying BW Profile?", vvMsg, 2, g_objIE)
+								Exit Do
+							End If
+							Call WriteStrToFile(strDirectoryWork & "\appl_filter.txt",strCRTexe & strFilter & _
+								" /ARG S /ARG " & strFileSettings &_
+								" /ARG D /ARG " & strDirectoryWork &_									
+								" /SCRIPT " & strDirectoryWork & "\" & VBScript_BWP_Apply, 1, 4, 0)		
+							
+							'Exit Do ' Remove after debug completion 
+							g_objShell.run strCRTexe & strFilter & _
+								" /ARG S /ARG " & strFileSettings &_
+								" /ARG D /ARG " & strDirectoryWork &_									
+								" /SCRIPT " & strDirectoryWork & "\" & VBScript_BWP_Apply,nWindowState
+                                Call TrDebug ("IE_PromptForInput: " & strCRTexe, "", objDebug, MAX_LEN, 1, 1)						
+								Call TrDebug ("IE_PromptForInput: " & strFilter, "", objDebug, MAX_LEN, 1, 1)						
+							Call TrDebug ("IE_PromptForInput: " & " /SCRIPT " & strDirectoryWork & "\" & VBScript_BWP_Apply, "",objDebug, MAX_LEN, 1, 1)						
 							Exit Do
 						Loop
 			Case "DOWNLOAD"
@@ -2291,19 +2446,19 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 								Else 
 								    g_objIE.Document.All("ButtonHandler").Value = "LOAD"			
 								End If
-									g_objShell.run strCRTexe &_ 
-										" /ARG " & vSvc(CurrentSvc,1) &_
-										" /ARG " & vFlavors(CurrentSvc, CurrentFlv,0) &_
-										" /ARG " & CurrentTsk &_
-										" /ARG " & strFileSettings &_
-										" /ARG " & strDirectoryWork &_																		
-										" /SCRIPT " & strDirectoryWork & "\" & VBScript_DNLD_Config, nWindowState
-                                    Call TrDebug ("IE_PromptForInput: " & strCRTexe, "", objDebug, MAX_LEN, 1, 1)															
-									Call TrDebug ("IE_PromptForInput: " & " /ARG " & vSvc(CurrentSvc,1), "", objDebug, MAX_LEN, 1, 1)						
-									Call TrDebug ("IE_PromptForInput: " & " /ARG " & vFlavors(CurrentSvc, CurrentFlv,0), "", objDebug, MAX_LEN, 1, 1)						
-									Call TrDebug ("IE_PromptForInput: " & " /ARG " & CurrentTsk, "", objDebug, MAX_LEN, 1, 1)						
-									Call TrDebug ("IE_PromptForInput: " & " /SCRIPT " & strDirectoryWork & "\" & VBScript_DNLD_Config, "",objDebug, MAX_LEN, 1, 1)
-                                    wscript.sleep 5000									
+								g_objShell.run strCRTexe &_ 
+									" /ARG " & vSvc(CurrentSvc,1) &_
+									" /ARG " & vFlavors(CurrentSvc, CurrentFlv,0) &_
+									" /ARG " & CurrentTsk &_
+									" /ARG " & strFileSettings &_
+									" /ARG " & strDirectoryWork &_																		
+									" /SCRIPT " & strDirectoryWork & "\" & VBScript_DNLD_Config, nWindowState
+								Call TrDebug ("IE_PromptForInput: " & strCRTexe, "", objDebug, MAX_LEN, 1, 1)															
+								Call TrDebug ("IE_PromptForInput: " & " /ARG " & vSvc(CurrentSvc,1), "", objDebug, MAX_LEN, 1, 1)						
+								Call TrDebug ("IE_PromptForInput: " & " /ARG " & vFlavors(CurrentSvc, CurrentFlv,0), "", objDebug, MAX_LEN, 1, 1)						
+								Call TrDebug ("IE_PromptForInput: " & " /ARG " & CurrentTsk, "", objDebug, MAX_LEN, 1, 1)						
+								Call TrDebug ("IE_PromptForInput: " & " /SCRIPT " & strDirectoryWork & "\" & VBScript_DNLD_Config, "",objDebug, MAX_LEN, 1, 1)
+								wscript.sleep 5000									
 							End If	
 							CFG_Downloaded = True
 						    Exit Do
@@ -2311,10 +2466,19 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 						YES_NO = False
 			Case "CHECK"
 						Do
-						nService = g_objIE.document.getElementById("Input_Param_0").selectedIndex 
-						nFlavor = g_objIE.document.getElementById("Input_Param_1").selectedIndex  
-						nTaskInd = g_objIE.document.getElementById("Input_Param_2").selectedIndex
-						nTask = Split(vFlavors(nService,nFlavor,1),",")(nTaskInd)                    
+							'--------------------------------------
+							' LOAD BW PROFILES
+							'--------------------------------------
+							strConfigFileL = vFlavors(nService, nFlavor,0) & "-" & nTask & "-" & Platform & "-l.conf"
+							strConfigFileL = SourceFolder & "\" & vSvc(nService,1) & "\" & strConfigFileL
+							Call GetFileLineCountSelect(strConfigFileL,vConfigFileLeft,"","","",0)
+							Call LoadBwProfiles_New(g_objIE, "bw_profile_1", "BW_Param_1",FltCurrent1)
+							Call LoadBwProfiles_New(g_objIE, "bw_profile_2", "BW_Param_2",FltCurrent2)
+							
+							nService = g_objIE.document.getElementById("Input_Param_0").selectedIndex 
+							nFlavor = g_objIE.document.getElementById("Input_Param_1").selectedIndex  
+							nTaskInd = g_objIE.document.getElementById("Input_Param_2").selectedIndex
+							nTask = Split(vFlavors(nService,nFlavor,1),",")(nTaskInd)                    
 							strConfigFileL = vFlavors(nService, nFlavor,0) & "-" & nTask & "-" & Platform & "-l.conf"
 						    strConfigFileR = vFlavors(nService, nFlavor,0) & "-" & nTask & "-" & Platform & "-r.conf"
 							'---------------------------------------------------------
@@ -2322,7 +2486,7 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 							'---------------------------------------------------------
 							If Not objFSO.FileExists(SourceFolder & "\" & vSvc(nService,1) & "\" & strConfigFileL) Then 
 								Call TrDebug ("IE_PromptForInput: FILE DOESN'T EXIST", "...\" & vSvc(nService,1) & "\" & strConfigFileL, objDebug, MAX_LEN, 1, 1)						
-								MsgBox "File L doesn't Exist"
+								MsgBox "Configuration File for Node-L doesn't exist" & chr(13) & SourceFolder & "\" & vSvc(nService,1) & "\" & strConfigFileL
 								exit Do
 							End If
 							'---------------------------------------------------------
@@ -2330,7 +2494,7 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 							'---------------------------------------------------------
 							If Not objFSO.FileExists(SourceFolder & "\" & vSvc(nService,1) & "\" & strConfigFileR) Then 
 								Call TrDebug ("IE_PromptForInput: FILE DOESN'T EXIST", "...\" & vSvc(nService,1) & "\" & strConfigFileR, objDebug, MAX_LEN, 1, 1)						
-								MsgBox "File R doesn't Exist"
+								MsgBox "Configuration File for Node-R doesn't exist" & chr(13) & SourceFolder & "\" & vSvc(nService,1) & "\" & strConfigFileR
 								exit Do
 							End If
 							'---------------------------------------------------------
@@ -2510,21 +2674,8 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
 				obgIE_XLS.Document.body.scroll = "no"
 				obgIE_XLS.Document.body.Style.overflow = "hidden"
 				obgIE_XLS.Document.body.Style.border = "None "
-			'	obgIE_XLS.Document.body.Style.background = "transparent url('" & BgFigure & "')"
 				obgIE_XLS.Document.body.Style.color = HttpTextColor1
-'				obgIE_XLS.height = WindowH
-'				obgIE_XLS.width = WindowW  
 				obgIE_XLS.document.Title = "TCG_ACX500"
-'				obgIE_XLS.Top = (intY - obgIE_XLS.height)/2
-'				obgIE_XLS.Left = (intX - obgIE_XLS.width)/2
-
-'				IE_Full_AppName = obgIE_XLS.document.Title & " - " & IE_Window_Title	
-				
-'				obgIE_XLS.Document.Body.innerHTML = strLine
-'				obgIE_XLS.MenuBar = False
-'				obgIE_XLS.StatusBar = False
-'				obgIE_XLS.AddressBar = False
-'				obgIE_XLS.Toolbar = False
                 i = 0
 				Do 
 				   i = i + 1
@@ -2741,7 +2892,13 @@ Function IE_PromptForInput(ByRef vIE_Scale, ByRef vSessionTmp, ByRef vSvc, ByRef
                 Call IE_Unhide(g_objIE)
 				g_objIE.Document.All("Current_config")(0).Value = Split(vSettings(13),"=")(1)
 		End Select
-		WScript.Sleep 300
+		'
+		'  Pause 200ms
+		Select Case g_objIE.Document.All("ButtonHandler").Value
+			Case "CHECK"
+			Case Else
+				WScript.Sleep 200
+		End Select
     Loop
 End Function
 '------------------------------------------------
@@ -3561,6 +3718,7 @@ Function IE_PromptForSettings(ByRef vIE_Scale, byRef vSettings, byRef vPlatforms
 							Exit Do
 					    Loop
 			Case "EDIT_PARAM"
+			            BrowseForFile(strDirectoryWork)
 						strFileParam = strDirectoryWork & "\config\" & g_objIE.Document.All("Settings_Param_12").Value
 						objEnvar.Run strEditor & " " & strFileParam
 						' MsgBox "notepad.exe " & strFileParam
@@ -3930,7 +4088,9 @@ Function RunCmd(strHost, strPsExeFolder, ByRef vCmdOut, strCMD, nDebug)
 	strRnd = My_Random(1,999999)
 	stdOutFile = "svc-" & strRnd & ".dat"
 	cmdFile = "run-" & strRnd & ".bat"
-    strWork = objShell.ExpandEnvironmentStrings("%USERPROFILE%")
+	If objFSO.FolderExists(strDirectoryTmp) _ 
+		Then strWork = strDirectoryTmp _
+		Else strWork = objShell.ExpandEnvironmentStrings("%USERPROFILE%")	
 	If strHost = objShell.ExpandEnvironmentStrings("%COMPUTERNAME%") or strHost = "127.0.0.1" Then 
 		strPsExec = ""
 	Else 
@@ -4097,16 +4257,9 @@ Redim vCBS(0)
 			Redim Preserve vPolicerList(nFilter + 1)
 		    Redim Preserve vCIR(nFilter + 1)
 			Redim Preserve vCBS(nFilter + 1)
-'			If nFilter > 0 Then 
-'			    If vPolicerList(nFilter-1) = "" Then 
-'				    vPolicerList(nFilter-1) = "N/A"
-'				    Call TrDebug ("GetFilterList: NO POLICER FOUND: ", vPolicerList(nFilter-1),objDebug, MAX_LEN, 1, nDebug) 
-'               End If				
-'           End If
 		    vFilterList(nFilter) = Split(Split(strLine,"filter ")(1)," {")(0)
 			Call TrDebug ("GetFilterList: FOUND FILTER:", vFilterList(nFilter),objDebug, MAX_LEN, 1, nDebug)
 			GetFilterList = True
-'			nFilter = nFilter + 1
 			nBraceFilter = 0
 			FoundFilter = True
 		End If
@@ -4154,12 +4307,12 @@ Redim vCBS(0)
 			    vPolicer = Split(strFilterCount,",")
 				For each nLine in vPolicer
 				    nPolicer = CInt(nLine)
-					If InStr(strLine,"committed-information-rate")<>0 Then vCIR(nPolicer) = Split(Split(strLine,"committed-information-rate ")(1),";")(0)
-					If InStr(strLine,"bandwidth-limit")<>0 Then vCIR(nPolicer) = Split(Split(strLine,"bandwidth-limit ")(1),";")(0)
-					If InStr(strLine,"peak-information-rate")<>0 Then vCIR(nPolicer) = vCIR(nPolicer) & " / " & Split(Split(strLine,"peak-information-rate ")(1),";")(0)
-					If InStr(strLine,"committed-burst-size")<>0 Then vCBS(nPolicer) = Split(Split(strLine,"committed-burst-size ")(1),";")(0)				
-					If InStr(strLine,"burst-size-limit")<>0 Then vCBS(nPolicer) = Split(Split(strLine,"burst-size-limit ")(1),";")(0)
-					If InStr(strLine,"peak-burst-size")<>0 Then vCBS(nPolicer) = vCBS(nPolicer) & " / " & Split(Split(strLine,"peak-burst-size ")(1),";")(0)		
+					If InStr(strLine,"committed-information-rate")<>0 Then vCIR(nPolicer) = Trim(Split(Split(strLine,"committed-information-rate ")(1),";")(0))
+					If InStr(strLine,"bandwidth-limit")<>0 Then vCIR(nPolicer) = Trim(Split(Split(strLine,"bandwidth-limit ")(1),";")(0))
+					If InStr(strLine,"peak-information-rate")<>0 Then vCIR(nPolicer) = vCIR(nPolicer) & "/" & Trim(Split(Split(strLine,"peak-information-rate ")(1),";")(0))
+					If InStr(strLine,"committed-burst-size")<>0 Then vCBS(nPolicer) = Trim(Split(Split(strLine,"committed-burst-size ")(1),";")(0))
+					If InStr(strLine,"burst-size-limit")<>0 Then vCBS(nPolicer) = Trim(Split(Split(strLine,"burst-size-limit ")(1),";")(0))
+					If InStr(strLine,"peak-burst-size")<>0 Then vCBS(nPolicer) = vCBS(nPolicer) & "/" & Trim(Split(Split(strLine,"peak-burst-size ")(1),";")(0))
 				Next
 			End If
         End If			
@@ -4401,9 +4554,10 @@ Function Flt_Radio(N,I)
 						 "value='Original'>"
 End Function
 '------------------------------------------------
-'   Function LoadBwProfiles(g_objIE, html_BW_Profile, html_BW_Params)
+'   Function LoadBwProfiles(g_objIE, html_BW_Profile, html_BW_Params,nFilter)
 '------------------------------------------------
-Function LoadBwProfiles(ByRef g_objIE, html_BW_Profile, html_BW_Params)
+Function LoadBwProfiles(ByRef g_objIE, html_BW_Profile, html_BW_Params,nFilter)
+Dim CBS, PBS
 	If Not GetFilterList(vConfigFileLeft, vFilterList, vPolicerList, vCIR, vCBS, 1) Then 
 		g_objIE.document.getElementById(html_BW_Profile).length = 1
 		g_objIE.document.getElementById(html_BW_Profile).Options(0).Text = "N/A"
@@ -4415,12 +4569,44 @@ Function LoadBwProfiles(ByRef g_objIE, html_BW_Profile, html_BW_Params)
 			g_objIE.document.getElementById(html_BW_Profile).length = n + 1
 			g_objIE.document.getElementById(html_BW_Profile).Options(n).text = vFilterList(n) 
 		Next
-		g_objIE.document.getElementById(html_BW_Profile).selectedIndex = 0
+		If Int(nFilter) <= n Then g_objIE.document.getElementById(html_BW_Profile).selectedIndex = nFilter
 	End If
-	If vPolicerList(0) <> "" Then g_objIE.Document.All(html_BW_Params)(0).Value = vPolicerList(0) Else g_objIE.Document.All(html_BW_Params)(0).Value = "N/A" End If
-	If vCIR(0) <> "" Then g_objIE.Document.All(html_BW_Params)(1).Value = vCIR(0) Else g_objIE.Document.All(html_BW_Params)(1).Value = "N/A" End If
-	If vCBS(0) <> "" Then g_objIE.Document.All(html_BW_Params)(2).Value = vCBS(0) Else g_objIE.Document.All(html_BW_Params)(2).Value = "N/A" End If	
-
+	If vPolicerList(nFilter) <> "" Then g_objIE.Document.All(html_BW_Params)(0).Value = vPolicerList(nFilter) Else g_objIE.Document.All(html_BW_Params)(0).Value = "N/A" End If
+	If InStr(vCIR(nFilter),"/") and vCIR(nFilter) <> "N/A" Then 
+		g_objIE.Document.All(html_BW_Params)(1).Value = Split(vCIR(nFilter),"/")(0)
+		g_objIE.Document.All(html_BW_Params)(2).Value = Split(vCIR(nFilter),"/")(1)		
+	Else 
+		g_objIE.Document.All(html_BW_Params)(1).Value = "N/A" 
+		g_objIE.Document.All(html_BW_Params)(2).Value = "N/A" 		
+	End If
+	'
+	'  Load CBS/PBS value to the form
+	'  Load Either Default value or value from original configuration file
+	If g_objIE.Document.All("DefBWprofile").Checked Then 
+		If InStr(vCBS(nFilter),"/") and vCBS(nFilter) <> "N/A" Then 
+			Select Case ValidateCBS(nFilter)
+				Case 1  ' CIR=N and EIR=0
+						CBS = CBSdef : PBS = CBS
+				Case 2  ' CIR=0 and EIR=N
+						CBS = CBSo : PBS = int(CBSo) + int(CBSdef)
+				Case 3  ' CIR=N and EIR=N
+						CBS = CBSdef : PBS = 2 * CBS				
+			End Select
+			g_objIE.Document.All(html_BW_Params)(3).Value = CBS 
+			g_objIE.Document.All(html_BW_Params)(4).Value = PBS
+		Else
+			g_objIE.Document.All(html_BW_Params)(3).Value = "N/A" 
+			g_objIE.Document.All(html_BW_Params)(4).Value = "N/A" 	
+		End If	
+	Else 
+		If InStr(vCBS(nFilter),"/") and vCBS(nFilter) <> "N/A" Then 
+			g_objIE.Document.All(html_BW_Params)(3).Value = Split(vCBS(nFilter),"/")(0) 
+			g_objIE.Document.All(html_BW_Params)(4).Value = Split(vCBS(nFilter),"/")(1) 		
+		Else
+			g_objIE.Document.All(html_BW_Params)(3).Value = "N/A" 
+			g_objIE.Document.All(html_BW_Params)(4).Value = "N/A" 	
+		End If	
+	End if 
 	For i = 0 to 1
 		g_objIE.Document.All("Flt_Intf0" & i )(0).Disabled = False
 		g_objIE.Document.All("Flt_Intf0" & i )(1).Disabled = False
@@ -4448,13 +4634,59 @@ Dim nFilter
 	' LOAD BW PROFILES
 	'--------------------------------------
 	If vPolicerList(nFilter) <> "" Then g_objIE.Document.All(html_BW_Params)(0).Value = vPolicerList(nFilter) Else g_objIE.Document.All(html_BW_Params)(0).Value = "N/A" End If
-	If vCIR(nFilter) <> "" Then g_objIE.Document.All(html_BW_Params)(1).Value = vCIR(nFilter) Else g_objIE.Document.All(html_BW_Params)(1).Value = "N/A" End If
-	If vCBS(nFilter) <> "" Then g_objIE.Document.All(html_BW_Params)(2).Value = vCBS(nFilter) Else g_objIE.Document.All(html_BW_Params)(2).Value = "N/A" End If	
+	If InStr(vCIR(nFilter),"/") and vCIR(nFilter)  <> "N/A" Then 
+		g_objIE.Document.All(html_BW_Params)(1).Value = Split(vCIR(nFilter),"/")(0)
+		g_objIE.Document.All(html_BW_Params)(2).Value = Split(vCIR(nFilter),"/")(1)		
+	Else 
+		g_objIE.Document.All(html_BW_Params)(1).Value = "N/A" 
+		g_objIE.Document.All(html_BW_Params)(2).Value = "N/A" 		
+	End If
+	'
+	'  Load CBS/PBS value to the form
+	'  Load Either Default value or value from original configuration file
+	If g_objIE.Document.All("DefBWprofile").Checked Then 
+		If InStr(vCBS(nFilter),"/") and vCBS(nFilter) <> "N/A" Then 
+			Select Case ValidateCBS(nFilter)
+				Case 1  ' CIR=N and EIR=0
+						CBS = CBSdef : PBS = CBS
+				Case 2  ' CIR=0 and EIR=N
+						CBS = CBSo : PBS = int(CBSo) + int(CBSdef)				
+				Case 3  ' CIR=N and EIR=N
+						CBS = CBSdef : PBS = 2 * CBS				
+			End Select
+			g_objIE.Document.All(html_BW_Params)(3).Value = CBS 
+			g_objIE.Document.All(html_BW_Params)(4).Value = PBS	
+		Else 
+			g_objIE.Document.All(html_BW_Params)(3).Value = "N/A" 
+			g_objIE.Document.All(html_BW_Params)(4).Value = "N/A" 		
+		End If	
+	Else 
+		If InStr(vCBS(nFilter),"/") and vCBS(nFilter) <> "N/A" Then 
+			g_objIE.Document.All(html_BW_Params)(3).Value = Split(vCBS(nFilter),"/")(0) 
+			g_objIE.Document.All(html_BW_Params)(4).Value = Split(vCBS(nFilter),"/")(1) 
+		Else 
+			g_objIE.Document.All(html_BW_Params)(3).Value = "N/A" 
+			g_objIE.Document.All(html_BW_Params)(4).Value = "N/A" 		
+		End If	
+		
+	End If
+	SelectBwProfiles = nFilter
 End Function
 '------------------------------------------------
 '   Function EnableBwProfiles(g_objIE)
 '------------------------------------------------
 Function EnableBwProfiles(ByRef g_objIE)
+	'
+	'   Enable all fields by default
+	Call DisableIntfButtons(g_obj_IE, false)
+	Call DisableBWParams(g_objIE, "BW_Param_1", false)
+	Call DisableBWParams(g_objIE, "BW_Param_2", false)
+	Call DisableBWParams(g_objIE, "bw_profile_1", false)
+	Call DisableBWParams(g_objIE, "bw_profile_2", false)
+	Call DisableBWParams(g_objIE, "Policer_BW_Param_1", false)
+	Call DisableBWParams(g_objIE, "Policer_BW_Param_2", false)
+    '
+	'  Disable Bw Profile and Filters if Filter name not configured or unknown
 	If g_objIE.document.getElementById("bw_profile_1").length < 2 Then	
 		g_objIE.document.getElementById("bw_profile_1").Disabled = True
 		For i = 0 to 1
@@ -4473,8 +4705,24 @@ Function EnableBwProfiles(ByRef g_objIE)
 				g_objIE.Document.All("Flt_Intf1" & i )(1).Disabled = True
 		Next 
 	End If 
-	If g_objIE.Document.All("UNI_BUTTON00").Value = "N/A" Then g_objIE.document.getElementById("bw_profile_1").Disabled = True
-	If g_objIE.Document.All("UNI_BUTTON01").Value = "N/A" Then g_objIE.document.getElementById("bw_profile_2").Disabled = True
+	'
+	'   Disable BW Parameters if no Policer found for Filter
+	If SelectedOption(g_objIE,"Policer_BW_Param_1") = "N/A" Then	Call DisableBWParams(g_objIE, "Policer_BW_Param_1", True)
+	If SelectedOption(g_objIE,"Policer_BW_Param_2") = "N/A" Then	Call DisableBWParams(g_objIE, "Policer_BW_Param_2", True)
+	'
+	'   Disable BW Parameters if correspondent Left UNI not configured
+	If g_objIE.Document.All("UNI_BUTTON00").Value = "N/A" Then 
+		Call DisableBWParams(g_objIE, "bw_profile_1", True)
+		Call DisableBWParams(g_objIE, "BW_Param_1", True)
+		Call DisableBWParams(g_objIE, "Policer_BW_Param_1", True)		
+	End If
+	If g_objIE.Document.All("UNI_BUTTON01").Value = "N/A" Then 
+		Call DisableBWParams(g_objIE, "bw_profile_2", True)
+		Call DisableBWParams(g_objIE, "BW_Param_2", True)
+		Call DisableBWParams(g_objIE, "Policer_BW_Param_2", True)		
+	End If
+	'
+	'  Disable interface radio button if correspondent UNI/ENNI is not configured 
 	For i = 0 to 1
 	    If g_objIE.Document.All("UNI_BUTTON0" & i).Value = "N/A" Then 
 			g_objIE.Document.All("Flt_Intf0" & i )(0).Disabled = True
@@ -4487,26 +4735,25 @@ Function EnableBwProfiles(ByRef g_objIE)
 			g_objIE.Document.All("Flt_Intf1" & i )(1).Disabled = True
 		End If
 	Next 
-	
 End Function
 '-------------------------------------------------------
 '   Function ApplyFilterList()
 '-------------------------------------------------------
-Function ApplyFilterList(ByRef g_objIE)
+Function ApplyFilterList(ByRef g_objIE, ByRef FilterCurrent1, ByRef FilterCurrent2)
 Dim nFilter, strFilter
     ApplyFilterList = ""
 	'
 	'   Filter 1
-	If Not g_objIE.document.getElementById("bw_profile_1").Disabled and g_objIE.Document.All("BW_Param_1")(0).value <> "N/A" Then 
+	If Not g_objIE.document.getElementById("bw_profile_1").Disabled and SelectedOption(g_objIE,"Policer_BW_Param_1") <> "N/A" Then 
 		nFilter = g_objIE.document.getElementById("bw_profile_1").selectedIndex
 		strFilter = g_objIE.document.getElementById("bw_profile_1").Options(nFilter).text
+		FilterCurrent1 = strFilter
 		' 	
 		'   Filter 1  on Node L 
 		For i = 0 to 1
 			If g_objIE.Document.All("Flt_Intf0" & i )(0).Checked = True Then 
 			    '
 				'  Create a filter record to be applied: "F:<filtername>:<node name>:<interface name>"
-				'If ApplyFilterList <> "" Then ApplyFilterList = ApplyFilterList & ","				
 				ApplyFilterList = ApplyFilterList & " /ARG F /ARG " & "L" & ":" & strFilter & ":" & i
 			End If 
 		Next 
@@ -4516,7 +4763,6 @@ Dim nFilter, strFilter
 			If g_objIE.Document.All("Flt_Intf1" & i )(0).Checked = True Then 
 			    '
 				'  Create a filter record to be applied: "F:<filtername>:<node name>:<interface name>"
-				'If ApplyFilterList <> "" Then ApplyFilterList = ApplyFilterList & "/ARG -F "
 				ApplyFilterList = ApplyFilterList & " /ARG F /ARG " & "R" & ":" & strFilter & ":" & i
 			End If 
 		Next 
@@ -4524,9 +4770,10 @@ Dim nFilter, strFilter
 	Call TrDebug ("ApplyFilter List 1: " & ApplyFilterList, "" , objDebug, MAX_WIDTH, 1, 1)
 	'
 	'   Filter 2
-	If Not g_objIE.document.getElementById("bw_profile_2").Disabled and g_objIE.document.All("BW_Param_2")(0).value <> "N/A" Then 
+	If Not g_objIE.document.getElementById("bw_profile_2").Disabled and SelectedOption(g_objIE,"Policer_BW_Param_2") <> "N/A" Then 
 		nFilter = g_objIE.document.getElementById("bw_profile_2").selectedIndex
 		strFilter = g_objIE.document.getElementById("bw_profile_2").Options(nFilter).text
+		FilterCurrent2 = strFilter
 		' 	
 		'   Filter 2  on Node L 
 		For i = 0 to 1
@@ -4569,4 +4816,395 @@ Dim oExec, oIn, g_objShell,ClipBoardText,objDataFileName
 		Err.clear
 	On Error Goto 0
 End Function
+'-------------------------------------------------
+'  Function MainMenuButton()
+'-------------------------------------------------
+Function MainMenuButton(ButtonID, ButtonName,CellHight,CellWidth,ButtonX,ButtonY,BGColor,TXTColor,ColSpan,ButtonAlign,ButtonText,EventID,MousEventID)
+Dim nFontSize_12
+	nFontSize_12 = 12
+	MainMenuButton = "<td colspan=""" & ColSpan & """ style=""border-style: none; background-color: Transparent;""align=""" & ButtonAlign &_
+     	""" class=""oa1"" height=""" & CellHight & """ width=""" & CellWidth & """ >" & _
+		"<button style='font-weight: bold; border-style: None; background-color: " & BGColor & "; color: " & TXTColor & "; width:" &_
+		ButtonX & ";height:" & ButtonY & ";font-size: " & nFontSize_12 & ".0pt;" &_
+		"px; ' id='Button"& ButtonID &"' name='"& ButtonName &"'" &_ 
+		"onclick=document.all('ButtonHandler').value='"& EventID &"'" 
+		If IsNumeric(MousEventID) Then 
+		    MainMenuButton = MainMenuButton &_
+			" onmouseenter=document.all('ButtonHandler').value='MOUSEIN_" & MousEventID & "';" &_
+			" onmouseleave=document.all('ButtonHandler').value='MOUSEOUT_" & MousEventID & "';"
+		End If 
+		MainMenuButton = MainMenuButton & " >"& ButtonText &"</button>" & "</td>"
+End Function
+'-------------------------------------------------------
+'   Function ApplyBwProfile()
+'-------------------------------------------------------
+Function ApplyBwProfile(ByRef g_objIE)
+Dim nFilter, strFilter, CIR, PIR, CBS, EBS
+    ApplyBwProfile = ""
+	'
+	'   Profile 1
+	If SelectedOption(g_objIE, "Policer_BW_Param_1") <> "N/A" Then 
+		CIR = g_objIE.document.All("BW_Param_1")(1).Value
+		PIR = g_objIE.document.All("BW_Param_1")(2).Value
+		CBS = g_objIE.document.All("BW_Param_1")(3).Value
+		EBS = g_objIE.document.All("BW_Param_1")(4).Value
+		strFilter = SelectedOption(g_objIE, "Policer_BW_Param_1")
+				
+		ApplyBwProfile = ApplyBwProfile & " /ARG P /ARG " & "L" & ":" & strFilter & ":" & CIR & ":" & PIR & ":" & CBS & ":" & EBS 
+		ApplyBwProfile = ApplyBwProfile & " /ARG P /ARG " & "R" & ":" & strFilter & ":" & CIR & ":" & PIR & ":" & CBS & ":" & EBS 
+	End If
+	Call TrDebug ("ApplyFilter List 1: " & ApplyBwProfile, "" , objDebug, MAX_WIDTH, 1, 1)
+	'
+	'   Profile 2
+	If SelectedOption(g_objIE, "Policer_BW_Param_2") <> "N/A" Then 
+		CIR = g_objIE.document.All("BW_Param_2")(1).Value
+		PIR = g_objIE.document.All("BW_Param_2")(2).Value
+		CBS = g_objIE.document.All("BW_Param_2")(3).Value
+		EBS = g_objIE.document.All("BW_Param_2")(4).Value
+		strFilter = SelectedOption(g_objIE, "Policer_BW_Param_2")
+				
+		ApplyBwProfile = ApplyBwProfile & " /ARG P /ARG " & "L" & ":" & strFilter & ":" & CIR & ":" & PIR & ":" & CBS & ":" & EBS 
+		ApplyBwProfile = ApplyBwProfile & " /ARG P /ARG " & "R" & ":" & strFilter & ":" & CIR & ":" & PIR & ":" & CBS & ":" & EBS 
+	End If
+	Call TrDebug ("ApplyFilter List 1: " & ApplyBwProfile, "" , objDebug, MAX_WIDTH, 1, 1)
+	Call TrDebug ("ApplyFilter List all: " & ApplyBwProfile, "" , objDebug, MAX_WIDTH, 1, 1)	
+End Function
+'-------------------------------------------------------
+'   Function ValidateBWProfile(objIE)
+'-------------------------------------------------------
+Function ValidateBWProfile(ByRef g_objIE) 
+ValidateBWProfile = True
 
+End Function
+'------------------------------------------------
+'   Function DisableBWParams(g_objIE, html_BW_Params, bDisable)
+'------------------------------------------------
+Function DisableBWParams(ByRef g_objIE, html_BW_Params, bDisabled)
+Dim BW_Param, Item
+    set BW_Param = g_objIE.document.All(html_BW_Params)
+	For Each Item in BW_Param
+		Item.disabled = bDisabled
+	Next 
+	set BW_Param = Nothing
+End Function
+'------------------------------------------------
+'   Function DisableIntfButtons(g_objIE, bDisable)
+'------------------------------------------------
+Function DisableIntfButtons(g_objIE,bDisable)
+	On Error Resume Next
+		For j = 0 to 1
+			For i = 0 to 3
+				g_objIE.Document.All("Flt_Intf" & j & i )(0).Disabled = bDisable
+				g_objIE.Document.All("Flt_Intf" & j & i )(1).Disabled = bDisable				
+			Next
+		Next
+	On Error Goto 0
+End Function
+'------------------------------------------------
+'   Function ValidateCBS(nFilter)
+'------------------------------------------------
+Function ValidateCBS(nFilter)
+Dim CIR, PIR, CBS, PBS
+	If vCIR(nFilter) = "" Then ValidateCBS = 0 : Exit Function : End If
+	CIR = Trim(Split(vCIR(nFilter),"/")(0))
+	PIR = Trim(Split(vCIR(nFilter),"/")(1))
+	CBS = Trim(Split(vCBS(nFilter),"/")(0))
+	PBS = Trim(Split(vCBS(nFilter),"/")(1))
+	if InStr(CIR,PIR) and InStr(PIR,CIR) Then ValidateCBS = 1 : Exit Function : End If
+	if CIR = CIRo or CBS = CBSo Then ValidateCBS = 2 : Exit Function : End If		
+	if CIR <> PIR 			    Then ValidateCBS = 3 : Exit Function : End If		
+End Function
+'-----------------------------------------------------------------------
+'   GetFilterList_New(vConfigFileLeft, ByRef vFilterList, ByRef vFilterProfileList, ByRef vPolicerList, ByRef vCIR, ByRef vCBS, nDebug)
+'-----------------------------------------------------------------------
+Function GetFilterList_New(vConfigFileLeft, ByRef vFilterList, ByRef vFilterProfileList, ByRef vPolicerList, ByRef vCIR, ByRef vCBS, nDebug)
+Dim nFilter, nPolicer,FW_Start, FoundFilter, FoundPolicer, strLine, nBraces
+	Redim vFilterList(1)
+	Redim vPolicerList(1)
+	Redim vFilterProfileList(1)
+	Redim vCIR(1)
+	Redim vCBS(1)
+	vFilterList(0) = "N/A"
+	vPolicerList(0) = "N/A"
+	vFilterProfileList(0) = "N/A"
+	GetFilterList_New = 0
+	nFilter = 0
+	nPolicer = 0
+	nBraces = 10000
+	FoundFilter = False
+	FoundPolicer = False
+	For Each strLine in vConfigFileLeft
+		strLine = Trim(strLine)
+        'If nBraces => 0 and nBraces < 10 Then Call TrDebug ("GetFilterList: " & strLine, nBraces,objDebug, MAX_LEN, 1, nDebug)		
+		Select Case nBraces
+			Case 1
+				If FoundPolicer Then nPolicer = nPolicer + 1
+				FoundPolicer = False
+				If Instr(strLine,"policer") Then 
+					FoundPolicer = True
+					Redim Preserve vPolicerList(nPolicer + 1)
+					Redim Preserve vCIR(nPolicer + 1)
+					Redim Preserve vCBS(nPolicer + 1)
+					vPolicerList(nPolicer) = Split(strLine," ")(1)
+					Call TrDebug ("GetFilterList: FOUND POLICER:", vPolicerList(nPolicer),objDebug, MAX_LEN, 1, nDebug)
+				End If
+			Case 2
+			    If FoundFilter Then nFilter = nFilter + 1
+				FoundFilter = False
+				If Instr(strLine,"filter ") Then 
+					FoundFilter = True				
+					Redim Preserve vFilterList(nFilter + 1)
+					Redim Preserve vFilterProfileList(nFilter + 1)
+					vFilterProfileList(nFilter) = "N/A"
+					vFilterList(nFilter) = Split(strLine," ")(1)
+					Call TrDebug ("GetFilterList: FOUND FILTER: " & nFilter, vFilterList(nFilter),objDebug, MAX_LEN, 1, nDebug)
+				End If				
+			Case 3
+					If InStr(strLine,"committed-information-rate") 	Then vCIR(nPolicer) = Split(Split(strLine," ")(1),";")(0)
+					If InStr(strLine,"bandwidth-limit") 			Then vCIR(nPolicer) = Split(Split(strLine," ")(1),";")(0)
+					If InStr(strLine,"peak-information-rate") 		Then vCIR(nPolicer) = vCIR(nPolicer) & "/" & Split(Split(strLine," ")(1),";")(0)
+					If InStr(strLine,"committed-burst-size") 		Then vCBS(nPolicer) = Split(Split(strLine," ")(1),";")(0)
+					If InStr(strLine,"burst-size-limit") 			Then vCBS(nPolicer) = Split(Split(strLine," ")(1),";")(0)
+					If InStr(strLine,"peak-burst-size") 			Then vCBS(nPolicer) = vCBS(nPolicer) & "/" & Split(Split(strLine,"peak-burst-size ")(1),";")(0)				
+					'Call TrDebug ("GetFilterList: FOUND PARAMETER:", strLine,objDebug, MAX_LEN, 1, nDebug)
+			Case 5
+			    If  InStr(strLine,"policer") and Instr(strLine,"three-color-policer") = 0 Then 
+					vFilterProfileList(nFilter) = vFilterProfileList(nFilter) & ":" & Split(Split(strLine," ")(1),";")(0)
+					Call TrDebug ("GetFilterList: " & strLine, nBraces,objDebug, MAX_LEN, 1, nDebug)		
+					Call TrDebug ("GetFilterList: FOUND POLICER IN FILTER:", vFilterProfileList(nFilter),objDebug, MAX_LEN, 1, nDebug)
+				End If
+			Case 6
+				If Instr(strLine,"two-rate") Then
+					vFilterProfileList(nFilter) = vFilterProfileList(nFilter) & ":" & Split(Split(strLine," ")(1),";")(0)
+					Call TrDebug ("GetFilterList: " & strLine, nBraces,objDebug, MAX_LEN, 1, nDebug)		
+					Call TrDebug ("GetFilterList: FOUND POLICER IN FILTER: " & nFilter , vFilterProfileList(nFilter),objDebug, MAX_LEN, 1, nDebug)
+					
+				End If
+			Case Else 
+				If InStr(strLine,"firewall ") Then 
+					FW_Start = True 
+					nBraces = 0 
+					Call TrDebug ("GetFilterList: FOUND FW:", strLine,objDebug, MAX_LEN, 1, nDebug)
+				End If				
+		End Select
+		If InStr(strLine,"{") Then nBraces = nBraces + 1
+		If InStr(strLine,"}") Then nBraces = nBraces - 1
+		if nBraces = 0 Then Exit For
+	Next
+	If UBound(vPolicerList) = 0 Then Redim vPolicerList(1) : vPolicerList(0) = "N/A" : End If
+	GetFilterList_New = nFilter
+End Function
+'------------------------------------------------
+'   Function SelectBwProfiles_New(g_objIE, html_BW_Profile, html_BW_Params)
+'------------------------------------------------
+Function SelectBwProfiles_New(ByRef g_objIE, html_BW_Profile, html_BW_Params, nFilter)
+Dim html_Policer_list, vList, strPolicer, nPolicer
+
+    html_Policer_list = "Policer_" & html_BW_Params
+	' nFilter = g_objIE.document.getElementById(html_BW_Profile).selectedIndex
+	'--------------------------------------
+	' LOAD BW PROFILES
+	'--------------------------------------
+	If UBound(Split(vFilterProfileList(nFilter),":")) = 0 Then 
+		g_objIE.document.getElementById(html_Policer_list).length = 1
+		g_objIE.document.getElementById(html_Policer_list).Options(0).Text = "N/A"
+	Else 
+		vList = Split(vFilterProfileList(nFilter),":")
+		g_objIE.document.getElementById(html_Policer_list).length = 0
+		For n = 1 to UBound(Split(vFilterProfileList(nFilter),":"))
+			strPolicer = Split(vFilterProfileList(nFilter),":")(n)
+			Select Case strPolicer
+				Case "N/A"
+				Case "" 
+					Exit For
+				Case Else
+					g_objIE.document.getElementById(html_Policer_list).length = n
+					g_objIE.document.getElementById(html_Policer_list).Options(n-1).text = strPolicer
+			End Select
+		Next 
+		g_objIE.document.getElementById(html_Policer_list).selectedIndex = 0
+	End If
+'	If vPolicerList(nFilter) <> "" Then g_objIE.Document.All(html_BW_Params)(0).Value = vPolicerList(nFilter) Else g_objIE.Document.All(html_BW_Params)(0).Value = "N/A" End If
+	strPolicer = g_objIE.document.getElementById(html_Policer_list).Options(0).text
+	Select Case strPolicer
+		Case "N/A"
+			g_objIE.Document.All(html_BW_Params)(1).Value = "N/A" 
+			g_objIE.Document.All(html_BW_Params)(2).Value = "N/A" 		
+			g_objIE.Document.All(html_BW_Params)(3).Value = "N/A" 
+			g_objIE.Document.All(html_BW_Params)(4).Value = "N/A" 		
+		Case Else 
+			For nPolicer = 0 to UBound(vPolicerList) - 1
+				if strPolicer = vPolicerList(nPolicer) Then Exit for 
+			Next 
+			g_objIE.Document.All(html_BW_Params)(1).Value = Split(vCIR(nPolicer),"/")(0)
+			g_objIE.Document.All(html_BW_Params)(2).Value = Split(vCIR(nPolicer),"/")(1)		
+			If g_objIE.Document.All("DefBWprofile").Checked Then 
+				Select Case ValidateCBS(nPolicer)
+					Case 1  ' CIR=N and EIR=0
+							CBS = CBSdef : PBS = CBS
+					Case 2  ' CIR=0 and EIR=N
+							CBS = CBSo : PBS = int(CBSo) + int(CBSdef)				
+					Case 3  ' CIR=N and EIR=N
+							CBS = CBSdef : PBS = 2 * CBS				
+				End Select
+				g_objIE.Document.All(html_BW_Params)(3).Value = CBS 
+				g_objIE.Document.All(html_BW_Params)(4).Value = PBS	
+			Else 
+				g_objIE.Document.All(html_BW_Params)(3).Value = Split(vCBS(nPolicer),"/")(0) 
+				g_objIE.Document.All(html_BW_Params)(4).Value = Split(vCBS(nPolicer),"/")(1) 
+			End If
+	End Select 
+	SelectBwProfiles_New = nPolicer
+End Function
+'------------------------------------------------
+'   Function LoadBwProfiles_New(g_objIE, html_BW_Profile, html_BW_Params,nFilter)
+'------------------------------------------------
+Function LoadBwProfiles_New(ByRef g_objIE, html_BW_Profile, html_BW_Params,nFilter)
+Dim CBS, PBS
+
+	If GetFilterList_New(vConfigFileLeft, vFilterList,vFilterProfileList, vPolicerList, vCIR, vCBS, nDebug)=0 Then 
+		g_objIE.document.getElementById(html_BW_Profile).length = 1
+		g_objIE.document.getElementById(html_BW_Profile).Options(0).Text = "N/A"
+		g_objIE.document.getElementById(html_BW_Profile).SelectedIndex = 0
+		g_objIE.document.getElementById(html_BW_Profile).Disabled = True
+	Else
+		g_objIE.document.getElementById(html_BW_Profile).Disabled = False
+		For n = 0 to UBound(vFilterList) - 1
+			g_objIE.document.getElementById(html_BW_Profile).length = n + 1
+			g_objIE.document.getElementById(html_BW_Profile).Options(n).text = vFilterList(n) 
+		Next
+		If Int(nFilter) <= n Then g_objIE.document.getElementById(html_BW_Profile).selectedIndex = nFilter
+	End If
+	Call SelectBwProfiles_New(g_objIE, html_BW_Profile, html_BW_Params, nFilter)
+	For i = 0 to 1
+		g_objIE.Document.All("Flt_Intf0" & i )(0).Disabled = False
+		g_objIE.Document.All("Flt_Intf0" & i )(1).Disabled = False
+		g_objIE.Document.All("Flt_Intf0" & i )(0).Checked = False
+		g_objIE.Document.All("Flt_Intf0" & i )(1).Checked = False
+	Next 
+	For i = 0 to 3
+	    g_objIE.Document.All("Flt_Intf1" & i )(0).Disabled = False
+		g_objIE.Document.All("Flt_Intf1" & i )(1).Disabled = False
+	    g_objIE.Document.All("Flt_Intf1" & i )(0).Checked = False
+		g_objIE.Document.All("Flt_Intf1" & i )(1).Checked = False
+	Next 	
+End Function
+'------------------------------------------------
+'   Function SelectPolicer_New(g_objIE, html_BW_Params)
+'------------------------------------------------
+Function SelectPolicer_New(ByRef g_objIE, html_BW_Params)
+Dim vList, strPolicer, nPolicer, html_Policer_list
+    html_Policer_list = "Policer_" & html_BW_Params
+	strPolicer = SelectedOption(g_objIE, html_Policer_list)
+	Select Case strPolicer
+		Case "N/A"
+			g_objIE.Document.All(html_BW_Params)(1).Value = "N/A" 
+			g_objIE.Document.All(html_BW_Params)(2).Value = "N/A" 		
+			g_objIE.Document.All(html_BW_Params)(3).Value = "N/A" 
+			g_objIE.Document.All(html_BW_Params)(4).Value = "N/A" 		
+		Case Else 
+			For nPolicer = 0 to UBound(vPolicerList) - 1
+				if strPolicer = vPolicerList(nPolicer) Then Exit for 
+			Next 
+			g_objIE.Document.All(html_BW_Params)(1).Value = Split(vCIR(nPolicer),"/")(0)
+			g_objIE.Document.All(html_BW_Params)(2).Value = Split(vCIR(nPolicer),"/")(1)		
+			If g_objIE.Document.All("DefBWprofile").Checked Then 
+				Select Case ValidateCBS(nPolicer)
+					Case 1  ' CIR=N and EIR=0
+							CBS = CBSdef : PBS = CBS
+					Case 2  ' CIR=0 and EIR=N
+							CBS = CBSo : PBS = int(CBSo) + int(CBSdef)				
+					Case 3  ' CIR=N and EIR=N
+							CBS = CBSdef : PBS = 2 * CBS				
+				End Select
+				g_objIE.Document.All(html_BW_Params)(3).Value = CBS 
+				g_objIE.Document.All(html_BW_Params)(4).Value = PBS	
+			Else 
+				g_objIE.Document.All(html_BW_Params)(3).Value = Split(vCBS(nPolicer),"/")(0) 
+				g_objIE.Document.All(html_BW_Params)(4).Value = Split(vCBS(nPolicer),"/")(1) 
+			End If
+	End Select 
+	SelectPolicer_New = nPolicer
+End Function
+'-------------------------------------------------------------
+'   Function SelectedOption(ByRef g_objIE, htmlID)
+'-------------------------------------------------------------
+Function SelectedOption(ByRef g_objIE, htmlID)
+Dim nIndex 
+	nIndex = g_objIE.document.getElementById(htmlID).SelectedIndex
+	SelectedOption = g_objIE.document.getElementById(htmlID).Options(nIndex).Text
+End Function 
+'-------------------------------------------------------
+'   Function ApplyBwProfile_All()
+'-------------------------------------------------------
+Function ApplyBwProfile_All(ByRef g_objIE)
+Dim nFilter, strFilter, CIR, PIR, CBS, EBS, nPolicer, nIndex
+    ApplyBwProfile_All = ""
+	'
+	'   Profile 1
+	If g_objIE.document.getElementById("Policer_BW_Param_1").Options(0).Text <> "N/A" Then 
+		For nIndex = 0 to g_objIE.document.getElementById("Policer_BW_Param_1").length - 1			
+			For nPolicer = 0 to Ubound(vPolicerList) - 1
+				if vPolicerList(nPolicer) = g_objIE.document.getElementById("Policer_BW_Param_1").Options(nIndex).Text Then Exit For
+			Next 
+			CIR = Split(vCIR(nPolicer),"/")(0)
+			PIR = Split(vCIR(nPolicer),"/")(1)
+			If g_objIE.Document.All("DefBWprofile").checked Then 
+				Select Case ValidateCBS(nPolicer)
+					Case 1  ' CIR=N and EIR=0
+							CBS = CBSdef : EBS = CBS
+					Case 2  ' CIR=0 and EIR=N
+							CBS = CBSo : EBS = int(CBSo) + int(CBSdef)				
+					Case 3  ' CIR=N and EIR=N
+							CBS = CBSdef : EBS = 2 * CBS				
+				End Select				
+			Else 
+				CBS = Split(vCBS(nPolicer),"/")(0)
+				EBS = Split(vCBS(nPolicer),"/")(1)
+			End If
+			strFilter = vPolicerList(nPolicer)
+			ApplyBwProfile_All = ApplyBwProfile_All & " /ARG P /ARG " & "L" & ":" & strFilter & ":" & CIR & ":" & PIR & ":" & CBS & ":" & EBS 
+			ApplyBwProfile_All = ApplyBwProfile_All & " /ARG P /ARG " & "R" & ":" & strFilter & ":" & CIR & ":" & PIR & ":" & CBS & ":" & EBS 
+		Next
+	End If
+	Call TrDebug ("ApplyFilter List 1: " & ApplyBwProfile_All, "" , objDebug, MAX_WIDTH, 1, 1)
+	'
+	'   Profile 2
+	If g_objIE.document.getElementById("Policer_BW_Param_2").Options(0).Text <> "N/A" Then 
+		For nIndex = 0 to g_objIE.document.getElementById("Policer_BW_Param_2").length - 1
+			For nPolicer = 0 to Ubound(vPolicerList) - 1
+				if vPolicerList(nPolicer) = g_objIE.document.getElementById("Policer_BW_Param_2").Options(nIndex).Text Then Exit For
+			Next 
+			CIR = Split(vCIR(nPolicer),"/")(0)
+			PIR = Split(vCIR(nPolicer),"/")(1)
+			If g_objIE.Document.All("DefBWprofile").checked Then 
+				Select Case ValidateCBS(nPolicer)
+					Case 1  ' CIR=N and EIR=0
+							CBS = CBSdef : EBS = CBS
+					Case 2  ' CIR=0 and EIR=N
+							CBS = CBSo : EBS = int(CBSo) + int(CBSdef)				
+					Case 3  ' CIR=N and EIR=N
+							CBS = CBSdef : EBS = 2 * CBS				
+				End Select				
+			Else 
+				CBS = Split(vCBS(nPolicer),"/")(0)
+				EBS = Split(vCBS(nPolicer),"/")(1)
+			End If
+			strFilter = vPolicerList(nPolicer)
+			ApplyBwProfile_All = ApplyBwProfile_All & " /ARG P /ARG " & "L" & ":" & strFilter & ":" & CIR & ":" & PIR & ":" & CBS & ":" & EBS 
+			ApplyBwProfile_All = ApplyBwProfile_All & " /ARG P /ARG " & "R" & ":" & strFilter & ":" & CIR & ":" & PIR & ":" & CBS & ":" & EBS 
+		Next
+	End If
+	Call TrDebug ("ApplyFilter List all: " & ApplyBwProfile_All, "" , objDebug, MAX_WIDTH, 1, 1)	
+End Function
+'-------------------------------------
+'  Function BrowseForFile()
+'-------------------------------------
+Function BrowseForFile(strFolder)
+    Dim shell : Set shell = CreateObject("Shell.Application")
+	On Error Resume Next
+    Dim file : Set file = shell.BrowseForFolder(0, "Choose a file:", &H4000, strFolder)
+    BrowseForFile = file.self.Path
+	MsgBox BrowseForFile & chr(13) & "error code: " & err.number & chr(13) & err.description
+	On Error Goto 0
+End Function

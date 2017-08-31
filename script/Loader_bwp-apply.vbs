@@ -1,7 +1,7 @@
 #$language = "VBScript"
 #$interface = "1.0"
 '----------------------------------------------------------------------------------
-'	SCRIPT USED TO APPLY FIREWALL FILTERS TO UNI INTERFACES ACCORDING TO MEF BW PROFILE
+'	SCRIPT USED TO CHANGE AND APPLY TWO RATE POLICER CIR/PIR/CBS/EBS VALUEs OF THE BW PROFILE
 '----------------------------------------------------------------------------------
 Const ForAppending = 8
 Const ForWriting = 2
@@ -70,13 +70,13 @@ Sub Main()
 	Redim vFW_FLT_L(0)
 	Redim vFW_FLT_R(0)
 	nL = 0 : nR = 0
-	strFilter = ""
+	strPolicer = ""
 	strFileSettings = ""
 	strDirectoryWork = ""
 	On Error Resume	Next
 	For i = 0 to crt.Arguments.Count
 		Select Case crt.Arguments(i)
-			Case "F"
+			Case "P"
 			    Select Case Split(crt.Arguments(i+1),":")(0)
 					Case "L"
 					   Redim Preserve vFW_FLT_L(nL + 1)
@@ -94,9 +94,9 @@ Sub Main()
 		End Select
 		If Err.Number > 0 Then 
 			MsgBox "ERROR: Wrong number of arguments" & chr(13) &_
-			"ARG1: -F <Node name L|R>:<filter name>:<interface name>" & chr(13) &_
-			"ARG2: -D <Work Folder Full Path>" & chr(13) &_
-			"ARG3: -S <Full Path to settings.dat file>"
+			"ARG1: P <Node name L|R>:<TrTrc policer name>:<CIR>:<PIR>:<CBS>:<EBS>" & chr(13) &_
+			"ARG2: D <Work Folder Full Path>" & chr(13) &_
+			"ARG3: S <Full Path to settings.dat file>"
 			crt.quit
 			Exit Sub
 		End If			
@@ -293,50 +293,32 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	'
 	'   Start Applying filters to Node L
 	bCommit = False
-	Call TrDebug_No_Date ("APPLYING FILTERS TO L-NODE: ", "", objDebug, MAX_LEN, 3, nInfo)		
+	Call TrDebug_No_Date ("APPLYING BW PROFILES TO L-NODE: ", "", objDebug, MAX_LEN, 3, nInfo)		
 	For Each strCommand in vFW_FLT_L
 		If strCommand = "" Then Exit For
-		strFilter = Split(strCommand,":")(1)
-	    strIFD = vNodes(0,Int(Split(strCommand,":")(2)))
+		strPolicer = Split(strCommand,":")(1)
+	    CIR = Split(strCommand,":")(2)
+	    PIR = Split(strCommand,":")(3)
+	    CBS = Split(strCommand,":")(4)		
+	    EBS = Split(strCommand,":")(5)		
         '
 		'   Validate interface configuration 
-		objTab_L.Screen.Send "edit interfaces " & strIFD & chr(13)
+		objTab_L.Screen.Send "edit firewall three-color-policer " & strPolicer & chr(13)
 		objTab_L.Screen.WaitForString "@" & strHostL & "#"
 		objTab_L.Screen.Send "show |no-more" & chr(13)
 		strLine = objTab_L.Screen.ReadString ("#")
-		If InStr(strLine,strFilter) <> 0 Then 
-			Call TrDebug_No_Date ("FILTER " & strFilter & " IS ALREADY APPLIED", "OK", objDebug, MAX_LEN, 1, nInfo)
+		If Not InStr(strLine,"two-rate") <> 0 Then 
+			Call TrDebug_No_Date ("TrRt Two Color Policer [" & strPolicer & "] doesn't exist", "SKIP", objDebug, MAX_LEN, 1, nInfo)
 		Else 
-			i = 0
-			strOldFilter = ""
-			FoundOldFilter = False
-			Do While i < UBound(Split(strLine,chr(13)))
-				If InStr(Split(strLine,chr(13))(i),"f-tc-") Then 
-				  strOldFilter = Split(strLine,chr(13))(i)
-				  j = 0
-				  Do While j < UBound(Split(strOldFilter," ")) + 1
-					If InStr(Split(strOldFilter," ")(j),"f-tc-") Then 
-						strOldFilter = Split(strOldFilter," ")(j)
-						If Right(strOldFilter,1) = ";" Then 
-							strOldFilter = Left(strOldFilter,Len(strOldFilter)-1)
-						End If
-						Call TrDebug_No_Date ("FOUND OLD FILTER: " & strOldFilter , "OK", objDebug, MAX_LEN, 1, nInfo)
-						FoundOldFilter = True 
-						Exit Do
-					End If
-					j = j + 1
-				  Loop
-				  Exit Do
-				End If
-				i = i + 1
-			Loop
-			objTab_L.Screen.Send chr(13)
+			objTab_L.Screen.Send "set two-rate committed-information-rate " & CIR & chr(13)
 			objTab_L.Screen.WaitForString "@" & strHostL & "#"
-		End If 
-		If FoundOldFilter Then 
-			objTab_L.Screen.Send "replace pattern " & strOldFilter & " with " & strFilter & chr(13)
+			objTab_L.Screen.Send "set two-rate committed-burst-size " & CBS & chr(13)
 			objTab_L.Screen.WaitForString "@" & strHostL & "#"
-			Call TrDebug_No_Date ("REPLACING PATTERN: " & strOldFilter & " with " & strFilter, "OK", objDebug, MAX_LEN, 1, nInfo)
+			objTab_L.Screen.Send "set two-rate peak-information-rate " & PIR & chr(13)
+			objTab_L.Screen.WaitForString "@" & strHostL & "#"
+			objTab_L.Screen.Send "set two-rate peak-burst-size " & EBS & chr(13)
+			objTab_L.Screen.WaitForString "@" & strHostL & "#"
+			Call TrDebug_No_Date ("Profile for TrTrc Policer [" & strPolicer & "] was applied", "OK", objDebug, MAX_LEN, 1, nInfo)
 			bCommit = True
 		End If 
         objTab_L.Screen.Send "exit" & chr(13)
@@ -344,8 +326,8 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	Next
 	'
 	'  Commit configuration on Left Node
-	Call  TrDebug_No_Date ("COMMIT " & strHostL, "......IN PROGRESS", objDebug, MAX_LEN, 1, nInfo)   
 	If bCommit Then 
+		Call  TrDebug_No_Date ("COMMIT " & strHostL, "......IN PROGRESS", objDebug, MAX_LEN, 1, nInfo)   
 		objTab_L.Screen.Send "commit" & chr(13)
 		'---------------------------------------------
 		'   COMMIT L
@@ -398,66 +380,47 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	objTab_R.Screen.Send "edit" & chr(13)
 	objTab_R.Screen.WaitForString "@" & strHostR & "#"
 	'
-	'   Start Applying filters to Node L
+	'   Start Applying filters to Node R
 	bCommit = False
-	Call TrDebug_No_Date ("APPLYING FILTERS TO R-NODE: ", "", objDebug, MAX_LEN, 3, nInfo)		
+	Call TrDebug_No_Date ("APPLYING BW PROFILES TO R-NODE: ", "", objDebug, MAX_LEN, 3, nInfo)		
 	For Each strCommand in vFW_FLT_R
 		If strCommand = "" Then Exit For
-		strFilter = Split(strCommand,":")(1)
-	    strIFD = vNodes(1,Int(Split(strCommand,":")(2)))
+		strPolicer = Split(strCommand,":")(1)
+	    CIR = Split(strCommand,":")(2)
+	    PIR = Split(strCommand,":")(3)
+	    CBS = Split(strCommand,":")(4)		
+	    EBS = Split(strCommand,":")(5)		
         '
-		'   Validate interface configuration 			
-		objTab_R.Screen.Send "edit interfaces " & strIFD & chr(13)
+		'   Validate interface configuration 
+		objTab_R.Screen.Send "edit firewall three-color-policer " & strPolicer & chr(13)
 		objTab_R.Screen.WaitForString "@" & strHostR & "#"
 		objTab_R.Screen.Send "show |no-more" & chr(13)
 		strLine = objTab_R.Screen.ReadString ("#")
-		If InStr(strLine,strFilter) <> 0 Then 
-			Call TrDebug_No_Date ("FILTER " & strFilter & " IS ALREADY APPLIED", "OK", objDebug, MAX_LEN, 1, nInfo)
-		Else 			
-			i = 0
-			strOldFilter = ""
-			FoundOldFilter = False
-			Do While i < UBound(Split(strLine,chr(13)))
-				If InStr(Split(strLine,chr(13))(i),"f-tc-") Then
-				  strOldFilter = Split(strLine,chr(13))(i)
-				  j = 0
-				  Do While j < UBound(Split(strOldFilter," ")) + 1
-					If InStr(Split(strOldFilter," ")(j),"f-tc-") Then 
-						strOldFilter = Split(strOldFilter," ")(j)
-						If Right(strOldFilter,1) = ";" Then 
-							strOldFilter = Left(strOldFilter,Len(strOldFilter)-1)
-						End If
-						Call TrDebug_No_Date ("FOUND OLD FILTER: " & strOldFilter , "OK", objDebug, MAX_LEN, 1, nInfo)
-						FoundOldFilter = True 
-						Exit Do
-					End If
-					j = j + 1
-				  Loop
-				  Exit Do
-				End If
-				i = i + 1
-			Loop
-			objTab_R.Screen.Send chr(13)
-			objTab_R.Screen.WaitForString "@" & strHostR & "#"			
-		End If
-		If FoundOldFilter Then 
-			objTab_R.Screen.Send "replace pattern " & strOldFilter & " with " & strFilter & chr(13)
+		If Not InStr(strLine,"two-rate") <> 0 Then 
+			Call TrDebug_No_Date ("TrTrc Policer [" & strPolicer & "] doesn't exist", "SKIP", objDebug, MAX_LEN, 1, nInfo)
+		Else 
+			objTab_R.Screen.Send "set two-rate committed-information-rate " & CIR & chr(13)
 			objTab_R.Screen.WaitForString "@" & strHostR & "#"
-			Call TrDebug_No_Date ("REPLACING PATTERN: " & strOldFilter & " with " & strFilter, "OK", objDebug, MAX_LEN, 1, nInfo)
+			objTab_R.Screen.Send "set two-rate committed-burst-size " & CBS & chr(13)
+			objTab_R.Screen.WaitForString "@" & strHostR & "#"
+			objTab_R.Screen.Send "set two-rate peak-information-rate " & PIR & chr(13)
+			objTab_R.Screen.WaitForString "@" & strHostR & "#"
+			objTab_R.Screen.Send "set two-rate peak-burst-size " & EBS & chr(13)
+			objTab_R.Screen.WaitForString "@" & strHostR & "#"
+			Call TrDebug_No_Date ("Profile for TrTrc Policer [" & strPolicer & "] was applied", "OK", objDebug, MAX_LEN, 1, nInfo)
 			bCommit = True
 		End If 
-		objTab_R.Screen.Send "exit" & chr(13)
-		objTab_R.Screen.WaitForString "@" & strHostR & "#"		
+        objTab_R.Screen.Send "exit" & chr(13)
+		objTab_R.Screen.WaitForString "@" & strHostR & "#"
 	Next
 	'
-	'  Commit configuration on Left Node
-	Call  TrDebug_No_Date ("COMMIT " & strHostR, "......IN PROGRESS", objDebug, MAX_LEN, 1, nInfo)   
+	'  Commit configuration on Right Node
 	If bCommit Then 
+		Call  TrDebug_No_Date ("COMMIT " & strHostR, "......IN PROGRESS", objDebug, MAX_LEN, 1, nInfo)   
 		objTab_R.Screen.Send "commit" & chr(13)
 		'---------------------------------------------
 		'   COMMIT R
-		'---------------------------------------------	
-		objTab_R.Screen.Send "commit" & chr(13)
+		'---------------------------------------------			
 		nResult = objTab_R.Screen.WaitForStrings (vWaitForCommit, 60)
 		Select Case nResult
 			Case 0
@@ -483,6 +446,8 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
     End If
 	objTab_R.Screen.Send "exit" & chr(13)	
 	objTab_R.Screen.WaitForString "@" & strHostR & ">"
+	'
+	'   Disconnect all terminal sessions
     objTab_R.Session.Disconnect	
     objTab_L.Session.Disconnect	
 	Call TrDebug_No_Date ("JOB DONE ", "", objDebug, MAX_LEN, 3, 1)	
@@ -492,7 +457,6 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	Set objEnvar = Nothing
 	crt.quit		
 End Sub
-
 '#######################################################################
 ' Function GetFileLineCount - Returns number of lines int the text file
 '#######################################################################

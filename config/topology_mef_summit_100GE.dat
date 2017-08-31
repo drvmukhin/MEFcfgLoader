@@ -1,0 +1,58 @@
+[Description]
+MEFcfgLoader topology version 2.0
+
+[Templates]
+# XLS TEMPLATE won't be used by loader version 01.1 or later
+Exported TCG Templates        = 
+
+[Sessions]
+Left Node Session             = MEF_Summit_10G, Node-L, node-l, iometrix
+Right Node Session            = MEF_Summit_10G, Node-R, node-r, iometrix
+
+[Settings]
+
+Configuration Files Folder    = C:\MEF\Configs\MX10003-100G
+CONFIGS_GLOBAL                = group-global
+CONFIGS_RE0                   = group-member0
+# CONFIGS_RE1                 = 
+Platform Name                 = mx10003
+Node Name Prefix              = mx
+Left Node IP                  = 10.164.0.15/24
+Right Node IP                 = 10.164.0.17/24
+
+[Node-Left]
+UNI-A=et-1/1/1
+UNI-B=et-1/1/3
+NNI=et-1/1/4
+
+[Node-Right]
+UNI-C = et-1/1/0
+UNI-D = et-1/1/2
+UNI-CC = et-
+UNI-DD = et-
+NNI = et-1/1/4
+
+[Service]
+E-Line
+E-Access
+
+[E-Line]
+epl:1,2,3,4,5
+evpl:1,2,3-2,3-3,3-4,3,4,5,6,7,8
+
+
+[E-Access]
+aepl:1
+aepl-dei:2
+aepl-pcp:2
+aevpl:1
+aevpl-dei:2
+aevpl-pcp:2
+
+[Default_Values]
+MTU = 9192
+CBS0 = 1500
+CBS = 13312
+
+
+

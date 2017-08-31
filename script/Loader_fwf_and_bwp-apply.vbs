@@ -76,15 +76,15 @@ Sub Main()
 	On Error Resume	Next
 	For i = 0 to crt.Arguments.Count
 		Select Case crt.Arguments(i)
-			Case "F"
+			Case "F", "P"
 			    Select Case Split(crt.Arguments(i+1),":")(0)
 					Case "L"
 					   Redim Preserve vFW_FLT_L(nL + 1)
-					   vFW_FLT_L(nL) = crt.Arguments(i+1)					
+					   vFW_FLT_L(nL) = crt.Arguments(i) & ":" & crt.Arguments(i+1)					
 					   nL = nL + 1
 					Case "R"
 					   Redim Preserve vFW_FLT_R(nR + 1)
-					   vFW_FLT_R(nR) = crt.Arguments(i+1)				
+					   vFW_FLT_R(nR) = crt.Arguments(i) & ":" & crt.Arguments(i+1)				
 					   nR = nR + 1
 				End Select
 			Case "D"
@@ -94,9 +94,10 @@ Sub Main()
 		End Select
 		If Err.Number > 0 Then 
 			MsgBox "ERROR: Wrong number of arguments" & chr(13) &_
-			"ARG1: -F <Node name L|R>:<filter name>:<interface name>" & chr(13) &_
-			"ARG2: -D <Work Folder Full Path>" & chr(13) &_
-			"ARG3: -S <Full Path to settings.dat file>"
+			"ARG1: P <Node name L|R>:<TrTrc policer name>:<CIR>:<PIR>:<CBS>:<EBS>" & chr(13) &_			
+			"ARG2: F <Node name L|R>:<filter name>:<interface name>" & chr(13) &_
+			"ARG3: D <Work Folder Full Path>" & chr(13) &_
+			"ARG4: S <Full Path to settings.dat file>"
 			crt.quit
 			Exit Sub
 		End If			
@@ -104,9 +105,10 @@ Sub Main()
 	On Error Goto 0 
 	If strFileSettings = "" or strDirectoryWork = "" Then
 		MsgBox "ERROR: Wrong number of arguments" & chr(13) &_
-		"ARG1: -F <Node name L|R>:<filter name>:<interface name>" & chr(13) &_
-		"ARG2: -D <Work Folder Full Path>" & chr(13) &_
-		"ARG3: -S <Full Path to settings.dat file>"
+		"ARG1: P <Node name L|R>:<TrTrc policer name>:<CIR>:<PIR>:<CBS>:<EBS>" & chr(13) &_		
+		"ARG2: F <Node name L|R>:<filter name>:<interface name>" & chr(13) &_
+		"ARG3: D <Work Folder Full Path>" & chr(13) &_
+		"ARG4: S <Full Path to settings.dat file>"
 		crt.quit
 		Exit Sub
 	End If
@@ -293,59 +295,92 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	'
 	'   Start Applying filters to Node L
 	bCommit = False
-	Call TrDebug_No_Date ("APPLYING FILTERS TO L-NODE: ", "", objDebug, MAX_LEN, 3, nInfo)		
+	Call TrDebug_No_Date ("APPLYING BW PROFILES TO L-NODE: ", "", objDebug, MAX_LEN, 3, nInfo)		
 	For Each strCommand in vFW_FLT_L
 		If strCommand = "" Then Exit For
-		strFilter = Split(strCommand,":")(1)
-	    strIFD = vNodes(0,Int(Split(strCommand,":")(2)))
-        '
-		'   Validate interface configuration 
-		objTab_L.Screen.Send "edit interfaces " & strIFD & chr(13)
-		objTab_L.Screen.WaitForString "@" & strHostL & "#"
-		objTab_L.Screen.Send "show |no-more" & chr(13)
-		strLine = objTab_L.Screen.ReadString ("#")
-		If InStr(strLine,strFilter) <> 0 Then 
-			Call TrDebug_No_Date ("FILTER " & strFilter & " IS ALREADY APPLIED", "OK", objDebug, MAX_LEN, 1, nInfo)
-		Else 
-			i = 0
-			strOldFilter = ""
-			FoundOldFilter = False
-			Do While i < UBound(Split(strLine,chr(13)))
-				If InStr(Split(strLine,chr(13))(i),"f-tc-") Then 
-				  strOldFilter = Split(strLine,chr(13))(i)
-				  j = 0
-				  Do While j < UBound(Split(strOldFilter," ")) + 1
-					If InStr(Split(strOldFilter," ")(j),"f-tc-") Then 
-						strOldFilter = Split(strOldFilter," ")(j)
-						If Right(strOldFilter,1) = ";" Then 
-							strOldFilter = Left(strOldFilter,Len(strOldFilter)-1)
-						End If
-						Call TrDebug_No_Date ("FOUND OLD FILTER: " & strOldFilter , "OK", objDebug, MAX_LEN, 1, nInfo)
-						FoundOldFilter = True 
-						Exit Do
-					End If
-					j = j + 1
-				  Loop
-				  Exit Do
-				End If
-				i = i + 1
-			Loop
-			objTab_L.Screen.Send chr(13)
-			objTab_L.Screen.WaitForString "@" & strHostL & "#"
-		End If 
-		If FoundOldFilter Then 
-			objTab_L.Screen.Send "replace pattern " & strOldFilter & " with " & strFilter & chr(13)
-			objTab_L.Screen.WaitForString "@" & strHostL & "#"
-			Call TrDebug_No_Date ("REPLACING PATTERN: " & strOldFilter & " with " & strFilter, "OK", objDebug, MAX_LEN, 1, nInfo)
-			bCommit = True
-		End If 
-        objTab_L.Screen.Send "exit" & chr(13)
-		objTab_L.Screen.WaitForString "@" & strHostL & "#"
+		strMode = Split(strCommand,":")(0)
+		Select Case strMode
+			Case "F"
+						strFilter = Split(strCommand,":")(2)
+						strIFD = vNodes(0,Int(Split(strCommand,":")(3)))
+						'
+						'   Validate interface configuration 
+						objTab_L.Screen.Send "edit interfaces " & strIFD & chr(13)
+						objTab_L.Screen.WaitForString "@" & strHostL & "#"
+						objTab_L.Screen.Send "show |no-more" & chr(13)
+						strLine = objTab_L.Screen.ReadString ("#")
+						If InStr(strLine,strFilter) <> 0 Then 
+							Call TrDebug_No_Date ("FILTER " & strFilter & " IS ALREADY APPLIED", "OK", objDebug, MAX_LEN, 1, nInfo)
+						Else 
+							i = 0
+							strOldFilter = ""
+							FoundOldFilter = False
+							Do While i < UBound(Split(strLine,chr(13)))
+								If InStr(Split(strLine,chr(13))(i),"f-tc-") Then 
+								  strOldFilter = Split(strLine,chr(13))(i)
+								  j = 0
+								  Do While j < UBound(Split(strOldFilter," ")) + 1
+									If InStr(Split(strOldFilter," ")(j),"f-tc-") Then 
+										strOldFilter = Split(strOldFilter," ")(j)
+										If Right(strOldFilter,1) = ";" Then 
+											strOldFilter = Left(strOldFilter,Len(strOldFilter)-1)
+										End If
+										Call TrDebug_No_Date ("FOUND OLD FILTER: " & strOldFilter , "OK", objDebug, MAX_LEN, 1, nInfo)
+										FoundOldFilter = True 
+										Exit Do
+									End If
+									j = j + 1
+								  Loop
+								  Exit Do
+								End If
+								i = i + 1
+							Loop
+							objTab_L.Screen.Send chr(13)
+							objTab_L.Screen.WaitForString "@" & strHostL & "#"
+						End If 
+						If FoundOldFilter Then 
+							objTab_L.Screen.Send "replace pattern " & strOldFilter & " with " & strFilter & chr(13)
+							objTab_L.Screen.WaitForString "@" & strHostL & "#"
+							Call TrDebug_No_Date ("REPLACING PATTERN: " & strOldFilter & " with " & strFilter, "OK", objDebug, MAX_LEN, 1, nInfo)
+							bCommit = True
+						End If 
+						objTab_L.Screen.Send "exit" & chr(13)
+						objTab_L.Screen.WaitForString "@" & strHostL & "#"
+			Case "P"
+						strPolicer = Split(strCommand,":")(2)
+						' Call TrDebug_No_Date ("APPLYING BW PROFILE: " & strPolicer, "", objDebug, MAX_LEN, 1, nInfo)						
+						CIR = Split(strCommand,":")(3)
+						PIR = Split(strCommand,":")(4)
+						CBS = Split(strCommand,":")(5)		
+						EBS = Split(strCommand,":")(6)		
+						'
+						'   Validate interface configuration 
+						objTab_L.Screen.Send "edit firewall three-color-policer " & strPolicer & chr(13)
+						objTab_L.Screen.WaitForString "@" & strHostL & "#"
+						objTab_L.Screen.Send "show |no-more" & chr(13)
+						strLine = objTab_L.Screen.ReadString ("#")
+						If Not InStr(strLine,"two-rate") <> 0 Then 
+							Call TrDebug_No_Date ("TrRt Two Color Policer [" & strPolicer & "] doesn't exist", "SKIP", objDebug, MAX_LEN, 1, nInfo)
+						Else 
+							objTab_L.Screen.Send "set two-rate committed-information-rate " & CIR & chr(13)
+							objTab_L.Screen.WaitForString "@" & strHostL & "#"
+							objTab_L.Screen.Send "set two-rate committed-burst-size " & CBS & chr(13)
+							objTab_L.Screen.WaitForString "@" & strHostL & "#"
+							objTab_L.Screen.Send "set two-rate peak-information-rate " & PIR & chr(13)
+							objTab_L.Screen.WaitForString "@" & strHostL & "#"
+							objTab_L.Screen.Send "set two-rate peak-burst-size " & EBS & chr(13)
+							objTab_L.Screen.WaitForString "@" & strHostL & "#"
+							Call TrDebug_No_Date ("Profile for TrTrc Policer [" & strPolicer & "] was applied", "OK", objDebug, MAX_LEN, 1, nInfo)
+							bCommit = True
+						End If 
+						objTab_L.Screen.Send "exit" & chr(13)
+						objTab_L.Screen.WaitForString "@" & strHostL & "#"
+		End Select
 	Next
-	'
-	'  Commit configuration on Left Node
-	Call  TrDebug_No_Date ("COMMIT " & strHostL, "......IN PROGRESS", objDebug, MAX_LEN, 1, nInfo)   
+		'
+		'  Commit configuration on Left Node
 	If bCommit Then 
+		Call  TrDebug_No_Date ("COMMIT " & strHostL, "......IN PROGRESS", objDebug, MAX_LEN, 1, nInfo)   
 		objTab_L.Screen.Send "commit" & chr(13)
 		'---------------------------------------------
 		'   COMMIT L
@@ -398,59 +433,93 @@ Call TrDebug_No_Date ("GetMyPID: PID = " & strPID & " ParentPID = " & strParentP
 	objTab_R.Screen.Send "edit" & chr(13)
 	objTab_R.Screen.WaitForString "@" & strHostR & "#"
 	'
-	'   Start Applying filters to Node L
+	'   Start Applying filters to Node R
 	bCommit = False
-	Call TrDebug_No_Date ("APPLYING FILTERS TO R-NODE: ", "", objDebug, MAX_LEN, 3, nInfo)		
+	Call TrDebug_No_Date ("APPLYING BW PROFILES TO R-NODE: ", "", objDebug, MAX_LEN, 3, nInfo)		
 	For Each strCommand in vFW_FLT_R
 		If strCommand = "" Then Exit For
-		strFilter = Split(strCommand,":")(1)
-	    strIFD = vNodes(1,Int(Split(strCommand,":")(2)))
-        '
-		'   Validate interface configuration 			
-		objTab_R.Screen.Send "edit interfaces " & strIFD & chr(13)
-		objTab_R.Screen.WaitForString "@" & strHostR & "#"
-		objTab_R.Screen.Send "show |no-more" & chr(13)
-		strLine = objTab_R.Screen.ReadString ("#")
-		If InStr(strLine,strFilter) <> 0 Then 
-			Call TrDebug_No_Date ("FILTER " & strFilter & " IS ALREADY APPLIED", "OK", objDebug, MAX_LEN, 1, nInfo)
-		Else 			
-			i = 0
-			strOldFilter = ""
-			FoundOldFilter = False
-			Do While i < UBound(Split(strLine,chr(13)))
-				If InStr(Split(strLine,chr(13))(i),"f-tc-") Then
-				  strOldFilter = Split(strLine,chr(13))(i)
-				  j = 0
-				  Do While j < UBound(Split(strOldFilter," ")) + 1
-					If InStr(Split(strOldFilter," ")(j),"f-tc-") Then 
-						strOldFilter = Split(strOldFilter," ")(j)
-						If Right(strOldFilter,1) = ";" Then 
-							strOldFilter = Left(strOldFilter,Len(strOldFilter)-1)
-						End If
-						Call TrDebug_No_Date ("FOUND OLD FILTER: " & strOldFilter , "OK", objDebug, MAX_LEN, 1, nInfo)
-						FoundOldFilter = True 
-						Exit Do
-					End If
-					j = j + 1
-				  Loop
-				  Exit Do
-				End If
-				i = i + 1
-			Loop
-			objTab_R.Screen.Send chr(13)
-			objTab_R.Screen.WaitForString "@" & strHostR & "#"			
-		End If
-		If FoundOldFilter Then 
-			objTab_R.Screen.Send "replace pattern " & strOldFilter & " with " & strFilter & chr(13)
-			objTab_R.Screen.WaitForString "@" & strHostR & "#"
-			Call TrDebug_No_Date ("REPLACING PATTERN: " & strOldFilter & " with " & strFilter, "OK", objDebug, MAX_LEN, 1, nInfo)
-			bCommit = True
-		End If 
-		objTab_R.Screen.Send "exit" & chr(13)
-		objTab_R.Screen.WaitForString "@" & strHostR & "#"		
+		Call  TrDebug_No_Date ("PROCESSING COMMAND: " & strCommand, "", objDebug, MAX_LEN, 1, 0)
+		strMode = Split(strCommand,":")(0)
+		Select Case strMode
+			Case "F"
+						strFilter = Split(strCommand,":")(2)
+						strIFD = vNodes(1,Int(Split(strCommand,":")(3)))
+						'
+						'   Validate interface configuration 				
+						objTab_R.Screen.Send "edit interfaces " & strIFD & chr(13)
+						objTab_R.Screen.WaitForString "@" & strHostR & "#"
+						objTab_R.Screen.Send "show |no-more" & chr(13)
+						strLine = objTab_R.Screen.ReadString ("#")
+						If InStr(strLine,strFilter) <> 0 Then 
+							Call TrDebug_No_Date ("FILTER " & strFilter & " IS ALREADY APPLIED", "OK", objDebug, MAX_REN, 1, nInfo)
+						Else 
+							i = 0
+							strOldFilter = ""
+							FoundOldFilter = False
+							Do While i < UBound(Split(strLine,chr(13)))
+								If InStr(Split(strLine,chr(13))(i),"f-tc-") Then 
+								  strOldFilter = Split(strLine,chr(13))(i)
+								  j = 0
+								  Do While j < UBound(Split(strOldFilter," ")) + 1
+									If InStr(Split(strOldFilter," ")(j),"f-tc-") Then 
+										strOldFilter = Split(strOldFilter," ")(j)
+										If Right(strOldFilter,1) = ";" Then 
+											strOldFilter = Left(strOldFilter,Len(strOldFilter)-1)
+										End If
+										Call TrDebug_No_Date ("FOUND OLD FILTER: " & strOldFilter , "OK", objDebug, MAX_REN, 1, nInfo)
+										FoundOldFilter = True 
+										Exit Do
+									End If
+									j = j + 1
+								  Loop
+								  Exit Do
+								End If
+								i = i + 1
+							Loop
+							objTab_R.Screen.Send chr(13)
+							objTab_R.Screen.WaitForString "@" & strHostR & "#"
+						End If 
+						If FoundOldFilter Then 
+							objTab_R.Screen.Send "replace pattern " & strOldFilter & " with " & strFilter & chr(13)
+							objTab_R.Screen.WaitForString "@" & strHostR & "#"
+							Call TrDebug_No_Date ("REPLACING PATTERN: " & strOldFilter & " with " & strFilter, "OK", objDebug, MAX_REN, 1, nInfo)
+							bCommit = True
+						End If 
+						objTab_R.Screen.Send "exit" & chr(13)
+						objTab_R.Screen.WaitForString "@" & strHostR & "#"
+			Case "P"
+						strPolicer = Split(strCommand,":")(2)
+						' Call TrDebug_No_Date ("APPLYING BW POLICER: " & strPolicer, "", objDebug, MAX_REN, 1, nInfo)						
+						CIR = Split(strCommand,":")(3)
+						PIR = Split(strCommand,":")(4)
+						CBS = Split(strCommand,":")(5)		
+						EBS = Split(strCommand,":")(6)		
+						'
+						'   Validate interface configuration 
+						objTab_R.Screen.Send "edit firewall three-color-policer " & strPolicer & chr(13)
+						objTab_R.Screen.WaitForString "@" & strHostR & "#"
+						objTab_R.Screen.Send "show |no-more" & chr(13)
+						strLine = objTab_R.Screen.ReadString ("#")
+						If Not InStr(strLine,"two-rate") <> 0 Then 
+							Call TrDebug_No_Date ("TrRt Two Color Policer [" & strPolicer & "] doesn't exist", "SKIP", objDebug, MAX_REN, 1, nInfo)
+						Else 
+							objTab_R.Screen.Send "set two-rate committed-information-rate " & CIR & chr(13)
+							objTab_R.Screen.WaitForString "@" & strHostR & "#"
+							objTab_R.Screen.Send "set two-rate committed-burst-size " & CBS & chr(13)
+							objTab_R.Screen.WaitForString "@" & strHostR & "#"
+							objTab_R.Screen.Send "set two-rate peak-information-rate " & PIR & chr(13)
+							objTab_R.Screen.WaitForString "@" & strHostR & "#"
+							objTab_R.Screen.Send "set two-rate peak-burst-size " & EBS & chr(13)
+							objTab_R.Screen.WaitForString "@" & strHostR & "#"
+							Call TrDebug_No_Date ("Profile for TrTrc Policer [" & strPolicer & "] was applied", "OK", objDebug, MAX_REN, 1, nInfo)
+							bCommit = True
+						End If 
+						objTab_R.Screen.Send "exit" & chr(13)
+						objTab_R.Screen.WaitForString "@" & strHostR & "#"
+		End Select
 	Next
 	'
-	'  Commit configuration on Left Node
+	'  Commit configuration on Right Node
 	Call  TrDebug_No_Date ("COMMIT " & strHostR, "......IN PROGRESS", objDebug, MAX_LEN, 1, nInfo)   
 	If bCommit Then 
 		objTab_R.Screen.Send "commit" & chr(13)
